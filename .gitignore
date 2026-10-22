@@ -1,0 +1,10 @@
+# Dati privati: NON pubblicare (contiene la password del Wi-Fi)
+secrets.h
+
+# File generati o personali
+build/
+.vscode/
+*.bin
+*.elf
+Thumbs.db
+.DS_Store
