@@ -24,7 +24,6 @@ private:
     uint32_t appColor;
 };
 
-// App del menu ancora vuote (Passi ha il suo file: steps_app.*)
-extern EmptyApp stopwatchApp;
+// App del menu ancora vuote (Passi e Cronometro hanno il loro file)
 extern EmptyApp batteryApp;
 extern EmptyApp settingsApp;

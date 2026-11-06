@@ -4,6 +4,7 @@
 #include "time_service.h"
 #include "screen.h"
 #include "steps_app.h"
+#include "stopwatch_app.h"
 #include "config.h"
 
 Watchface watchface;
@@ -11,6 +12,7 @@ Watchface watchface;
 static lv_obj_t *timeLabel = nullptr;
 static lv_obj_t *dateLabel = nullptr;
 static lv_obj_t *stepsLabel = nullptr;
+static lv_obj_t *stopwatchLabel = nullptr;
 
 static const char *GIORNI[] = {"Domenica", "Lunedi'", "Martedi'", "Mercoledi'",
                                "Giovedi'", "Venerdi'", "Sabato"};
@@ -44,6 +46,15 @@ void Watchface::begin()
         lv_obj_set_style_text_font(stepsLabel, &lv_font_montserrat_16, 0);
         lv_obj_set_style_text_color(stepsLabel, lv_color_hex(0x9AA0A6), 0);
         lv_label_set_text(stepsLabel, "");
+    }
+
+    // Cronometro in alto a sinistra (solo se avviato o in pausa)
+    if (cfg::STOPWATCH_ON_WATCHFACE) {
+        stopwatchLabel = lv_label_create(scr);
+        lv_obj_set_style_text_font(stopwatchLabel, &lv_font_montserrat_16, 0);
+        lv_label_set_text(stopwatchLabel, "");
+        lv_obj_align(stopwatchLabel, LV_ALIGN_TOP_LEFT, 8, 6);
+        lv_obj_add_flag(stopwatchLabel, LV_OBJ_FLAG_HIDDEN);
     }
 
     refresh();
@@ -82,5 +93,18 @@ void Watchface::refresh()
         lv_obj_set_style_text_color(stepsLabel,
             lv_color_hex(stepsApp.goalReached() ? 0x34C759 : 0x9AA0A6), 0);
         lv_obj_align_to(stepsLabel, dateLabel, LV_ALIGN_OUT_BOTTOM_MID, 0, 10);
+    }
+
+    if (stopwatchLabel) {
+        if (stopwatchApp.isActive()) {
+            char buf[16];
+            StopwatchApp::formatShort(stopwatchApp.elapsedUs(), buf, sizeof(buf));
+            const bool run = stopwatchApp.isRunning();
+            lv_label_set_text_fmt(stopwatchLabel, "%s %s", run ? LV_SYMBOL_PLAY : LV_SYMBOL_PAUSE, buf);
+            lv_obj_set_style_text_color(stopwatchLabel, lv_color_hex(run ? 0xEF6C00 : 0x9AA0A6), 0);
+            lv_obj_remove_flag(stopwatchLabel, LV_OBJ_FLAG_HIDDEN);
+        } else {
+            lv_obj_add_flag(stopwatchLabel, LV_OBJ_FLAG_HIDDEN);
+        }
     }
 }

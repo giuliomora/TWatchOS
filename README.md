@@ -6,6 +6,7 @@ Firmware modulare per lo smartwatch **LilyGO T-Watch S3**, scritto con Arduino I
 - Mostra ora e data.
 - Menu: tocca il quadrante per aprire la griglia con le app (per ora vuote); scorri verso destra o tocca la freccia in alto per tornare indietro.
 - Passi: anello verso l'obiettivo (6.000, in `config.h`), km e calorie stimati, passi di ieri; i passi si vedono anche sul quadrante. Azzeramento a mezzanotte e vibrazione all'obiettivo.
+- Cronometro: Avvia/Pausa, Giro (si vede l'ultimo), Stop; conta anche a schermo spento e compare sul quadrante in alto a sinistra.
 - Batteria in alto a destra: grigia, verde con il fulmine in carica, rossa sotto il 20%.
 - Lo schermo si accende ruotando il polso, toccando lo schermo o con un click breve sulla corona.
 - Si spegne da solo dopo 5 secondi (modificabile in `config.h`).
@@ -44,6 +45,9 @@ Comando `polso`: accende/spegne i messaggi di prova; a ogni gesto riconosciuto s
 Li conta il sensore di movimento da solo, anche a schermo spento.
 Comandi: `passi` (passi di oggi e di ieri), `passi vibra` (prova la vibrazione dell'obiettivo).
 
+## Cronometro
+Comando: `crono` (stato del cronometro). Impostazioni in `config.h` (vibrazione, schermo sempre acceso).
+
 ## Regolare l'ora a mano
 1. Apri *Tools → Serial Monitor*, imposta **115200 baud** e **Newline**.
 2. Scrivi, per esempio, `ora 2026-10-22 15:30:00` e premi Invio.
@@ -65,6 +69,7 @@ L'ora resta salvata nell'orologio (RTC) finché la batteria non si scarica del t
 | `launcher.*` | navigazione quadrante → menu → app |
 | `watch_app.h` | interfaccia comune delle app |
 | `steps_app.*` | app Passi |
+| `stopwatch_app.*` | app Cronometro |
 | `empty_app.*` | app vuote (segnaposto) |
 | `wifi_time.*` | ora automatica via Wi-Fi |
 | `secrets.example.h` | modello per `secrets.h` (nome e password del Wi-Fi) |

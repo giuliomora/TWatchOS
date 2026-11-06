@@ -64,6 +64,18 @@ constexpr uint32_t STEPS_CHECK_MIN = 5;
 // Ogni quanti minuti salvare i passi in memoria (contro i riavvii)
 constexpr uint32_t STEPS_SAVE_MIN = 15;
 
+// --- Cronometro --------------------------------------------
+// Vibrazione breve a ogni tocco su Avvia/Pausa, Giro, Stop
+constexpr bool STOPWATCH_VIBRATE = true;
+
+// Mentre il cronometro conta, tenere lo schermo sempre acceso
+// (solo con l'app aperta)? false = si spegne come al solito,
+// il cronometro continua a contare lo stesso.
+constexpr bool STOPWATCH_KEEP_SCREEN_ON = false;
+
+// Mostra il cronometro sul quadrante (in alto a sinistra) se e' avviato o in pausa
+constexpr bool STOPWATCH_ON_WATCHFACE = true;
+
 // --- Ora ---------------------------------------------------
 // Fuso orario con le regole di ora solare/legale (questo e' l'Italia).
 // Altri fusi: https://github.com/nayarsystems/posix_tz_db/blob/master/zones.csv
