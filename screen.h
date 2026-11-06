@@ -24,9 +24,14 @@ public:
 
     bool isOn() const { return on; }
 
+    // Dopo quanti ms senza tocchi lo schermo si spegne (0 = mai).
+    // Lo imposta il launcher a seconda della schermata.
+    void setTimeout(uint32_t ms) { timeoutMs = ms; }
+
 private:
     bool on = false;
     uint32_t lastActivity = 0;
+    uint32_t timeoutMs = 0;
 };
 
 // L'unico schermo dell'orologio, utilizzabile da tutti i moduli

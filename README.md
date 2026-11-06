@@ -4,6 +4,8 @@ Firmware modulare per lo smartwatch **LilyGO T-Watch S3**, scritto con Arduino I
 
 ## Cosa fa adesso
 - Mostra ora e data.
+- Menu: tocca il quadrante per aprire la griglia con le app (per ora vuote); scorri verso destra o tocca la freccia in alto per tornare indietro.
+- Batteria in alto a destra: grigia, verde con il fulmine in carica, rossa sotto il 20%.
 - Lo schermo si accende ruotando il polso, toccando lo schermo o con un click breve sulla corona.
 - Si spegne da solo dopo 5 secondi (modificabile in `config.h`).
 - Sincronizza l'ora via Wi-Fi e gestisce da solo l'ora legale.
@@ -33,6 +35,10 @@ A schermo spento il processore va in sospensione e si risveglia con polso, tocco
 Con il cavo USB collegato la sospensione è in pausa (per non disturbare il Serial Monitor).
 Comandi: `power` (batteria e statistiche), `power reset` (azzera le statistiche).
 
+## Gesto del polso
+Il sensore usa l'algoritmo per orologi (`WRIST_MODE_WRISTBAND` in `config.h`).
+Comando `polso`: accende/spegne i messaggi di prova; a ogni gesto riconosciuto stampa l'inclinazione dell'orologio (0 gradi = schermo verso l'alto).
+
 ## Regolare l'ora a mano
 1. Apri *Tools → Serial Monitor*, imposta **115200 baud** e **Newline**.
 2. Scrivi, per esempio, `ora 2026-10-22 15:30:00` e premi Invio.
@@ -50,6 +56,10 @@ L'ora resta salvata nell'orologio (RTC) finché la batteria non si scarica del t
 | `inputs.*` | polso, tocco, corona |
 | `time_service.*` | ora (RTC) |
 | `watchface.*` | quadrante |
+| `status_bar.*` | batteria in alto a destra |
+| `launcher.*` | navigazione quadrante → menu → app |
+| `watch_app.h` | interfaccia comune delle app |
+| `empty_app.*` | app vuote (segnaposto) |
 | `wifi_time.*` | ora automatica via Wi-Fi |
 | `secrets.example.h` | modello per `secrets.h` (nome e password del Wi-Fi) |
 | `power.*` | risparmio energetico |

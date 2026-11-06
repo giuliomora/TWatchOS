@@ -9,6 +9,10 @@
 //    inputs.h/.cpp     polso, tocco, corona -> accendono lo schermo
 //    time_service.*    ora dall'RTC + comando seriale "ora"
 //    watchface.*       quadrante con ora e data
+//    status_bar.*      batteria in alto a destra
+//    launcher.*        navigazione quadrante -> menu -> app
+//    watch_app.h       interfaccia comune delle app
+//    empty_app.*       app vuote (segnaposto) del menu
 //    wifi_time.*       sincronizzazione automatica dell'ora via Wi-Fi
 //    secrets.h         nome e password del Wi-Fi
 //    power.*           risparmio energetico (sospensione a schermo spento)
@@ -27,6 +31,9 @@
 #include "inputs.h"
 #include "time_service.h"
 #include "watchface.h"
+#include "status_bar.h"
+#include "launcher.h"
+#include "empty_app.h"
 #include "wifi_time.h"
 #include "power.h"
 
@@ -44,6 +51,15 @@ void setup()
     App::add(&timeService);
     App::add(&wifiTime);
     App::add(&watchface);
+    App::add(&statusBar);
+
+    // App del menu (griglia 2x2, in questo ordine)
+    launcher.addApp(&stepsApp);
+    launcher.addApp(&stopwatchApp);
+    launcher.addApp(&batteryApp);
+    launcher.addApp(&settingsApp);
+    App::add(&launcher);
+
     App::add(&inputs);
     App::add(&screen);
     App::add(&power);   // per ultimo: decide se dormire dopo che tutti hanno lavorato

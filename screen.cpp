@@ -10,12 +10,13 @@ void Screen::begin()
 {
     // All'avvio lo schermo parte acceso
     on = false;
+    if (timeoutMs == 0) timeoutMs = cfg::SCREEN_TIMEOUT_MS;
     wake("avvio");
 }
 
 void Screen::update()
 {
-    if (on && millis() - lastActivity > cfg::SCREEN_TIMEOUT_MS) {
+    if (on && timeoutMs > 0 && millis() - lastActivity > timeoutMs) {
         sleep();
     }
 }
