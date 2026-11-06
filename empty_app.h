@@ -24,8 +24,7 @@ private:
     uint32_t appColor;
 };
 
-// Le quattro app del menu (per ora vuote)
-extern EmptyApp stepsApp;
+// App del menu ancora vuote (Passi ha il suo file: steps_app.*)
 extern EmptyApp stopwatchApp;
 extern EmptyApp batteryApp;
 extern EmptyApp settingsApp;

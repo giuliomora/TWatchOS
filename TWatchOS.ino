@@ -12,6 +12,7 @@
 //    status_bar.*      batteria in alto a destra
 //    launcher.*        navigazione quadrante -> menu -> app
 //    watch_app.h       interfaccia comune delle app
+//    steps_app.*       app Passi (contapassi, anche sul quadrante)
 //    empty_app.*       app vuote (segnaposto) del menu
 //    wifi_time.*       sincronizzazione automatica dell'ora via Wi-Fi
 //    secrets.h         nome e password del Wi-Fi
@@ -33,6 +34,7 @@
 #include "watchface.h"
 #include "status_bar.h"
 #include "launcher.h"
+#include "steps_app.h"
 #include "empty_app.h"
 #include "wifi_time.h"
 #include "power.h"

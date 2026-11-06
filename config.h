@@ -43,6 +43,27 @@ constexpr uint32_t STATUS_BAR_REFRESH_MS = 10000;
 // Sotto questa percentuale la batteria diventa rossa
 constexpr int BATTERY_LOW_PCT = 20;
 
+// --- Passi ------------------------------------------------
+// Obiettivo giornaliero (anello pieno e vibrazione)
+constexpr uint32_t STEPS_GOAL = 6000;
+
+// Al raggiungimento dell'obiettivo: vibra? accende lo schermo?
+constexpr bool STEPS_GOAL_VIBRATE     = true;
+constexpr bool STEPS_GOAL_WAKE_SCREEN = true;
+
+// Mostra i passi sul quadrante, sotto la data
+constexpr bool STEPS_ON_WATCHFACE = true;
+
+// Per le stime: lunghezza del passo (cm) e calorie ogni 1000 passi
+constexpr uint32_t STEP_LENGTH_CM      = 70;
+constexpr uint32_t KCAL_PER_1000_STEPS = 40;
+
+// A schermo spento, ogni quanti minuti controllare obiettivo e mezzanotte
+constexpr uint32_t STEPS_CHECK_MIN = 5;
+
+// Ogni quanti minuti salvare i passi in memoria (contro i riavvii)
+constexpr uint32_t STEPS_SAVE_MIN = 15;
+
 // --- Ora ---------------------------------------------------
 // Fuso orario con le regole di ora solare/legale (questo e' l'Italia).
 // Altri fusi: https://github.com/nayarsystems/posix_tz_db/blob/master/zones.csv

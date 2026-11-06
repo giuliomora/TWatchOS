@@ -2,7 +2,6 @@
 
 // Icone provvisorie: LVGL non ha icone di passi o cronometro,
 // in futuro si potranno disegnare icone personalizzate.
-EmptyApp stepsApp("Passi", LV_SYMBOL_GPS, 0x2E7D32);
 EmptyApp stopwatchApp("Cronometro", LV_SYMBOL_PLAY, 0xEF6C00);
 EmptyApp batteryApp("Batteria", LV_SYMBOL_BATTERY_FULL, 0x1565C0);
 EmptyApp settingsApp("Impostazioni", LV_SYMBOL_SETTINGS, 0x546E7A);

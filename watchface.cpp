@@ -3,11 +3,14 @@
 #include "watchface.h"
 #include "time_service.h"
 #include "screen.h"
+#include "steps_app.h"
+#include "config.h"
 
 Watchface watchface;
 
 static lv_obj_t *timeLabel = nullptr;
 static lv_obj_t *dateLabel = nullptr;
+static lv_obj_t *stepsLabel = nullptr;
 
 static const char *GIORNI[] = {"Domenica", "Lunedi'", "Martedi'", "Mercoledi'",
                                "Giovedi'", "Venerdi'", "Sabato"};
@@ -34,6 +37,14 @@ void Watchface::begin()
     lv_obj_set_style_text_color(dateLabel, lv_color_hex(0x9AA0A6), 0);
     lv_label_set_text(dateLabel, "");
     lv_obj_align_to(dateLabel, timeLabel, LV_ALIGN_OUT_BOTTOM_MID, 0, 8);
+
+    // Passi di oggi, sotto la data (verdi a obiettivo raggiunto)
+    if (cfg::STEPS_ON_WATCHFACE) {
+        stepsLabel = lv_label_create(scr);
+        lv_obj_set_style_text_font(stepsLabel, &lv_font_montserrat_16, 0);
+        lv_obj_set_style_text_color(stepsLabel, lv_color_hex(0x9AA0A6), 0);
+        lv_label_set_text(stepsLabel, "");
+    }
 
     refresh();
 }
@@ -63,4 +74,13 @@ void Watchface::refresh()
     int mo = (t.tm_mon >= 0 && t.tm_mon < 12) ? t.tm_mon : 0;
     lv_label_set_text_fmt(dateLabel, "%s %d %s", GIORNI[wd], t.tm_mday, MESI[mo]);
     lv_obj_align_to(dateLabel, timeLabel, LV_ALIGN_OUT_BOTTOM_MID, 0, 8);
+
+    if (stepsLabel) {
+        char buf[16];
+        formatSteps(stepsApp.today(), buf, sizeof(buf));
+        lv_label_set_text_fmt(stepsLabel, "%s passi", buf);
+        lv_obj_set_style_text_color(stepsLabel,
+            lv_color_hex(stepsApp.goalReached() ? 0x34C759 : 0x9AA0A6), 0);
+        lv_obj_align_to(stepsLabel, dateLabel, LV_ALIGN_OUT_BOTTOM_MID, 0, 10);
+    }
 }
