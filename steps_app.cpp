@@ -9,6 +9,7 @@
 #include "screen.h"
 #include "app.h"
 #include "config.h"
+#include "user_settings.h"
 
 StepsApp stepsApp;
 
@@ -100,7 +101,7 @@ void StepsApp::begin()
     else { savedSteps = today(); lastSave = millis(); }
 
     App::log(name(), "Passi oggi: %lu, ieri: %lu, obiettivo %lu",
-             (unsigned long)today(), (unsigned long)yesterdaySteps, (unsigned long)cfg::STEPS_GOAL);
+             (unsigned long)today(), (unsigned long)yesterdaySteps, (unsigned long)userSettings.stepsGoal);
 }
 
 void StepsApp::readSensor()
@@ -127,7 +128,9 @@ void StepsApp::check()
     }
     midnightAt = millis() + msToMidnight(now);
 
-    if (!goalDone && today() >= cfg::STEPS_GOAL) {
+    // Obiettivo alzato nelle impostazioni: non e' piu' raggiunto
+    if (goalDone && today() < userSettings.stepsGoal) goalDone = false;
+    if (!goalDone && today() >= userSettings.stepsGoal) {
         goalDone = true;
         App::log(name(), "Obiettivo raggiunto: %lu passi!", (unsigned long)today());
         save();
@@ -244,7 +247,7 @@ void StepsApp::refreshUi()
     const uint32_t steps = today();
     char buf[16];
 
-    uint32_t permille = (uint32_t)((uint64_t)steps * 1000 / cfg::STEPS_GOAL);
+    uint32_t permille = (uint32_t)((uint64_t)steps * 1000 / userSettings.stepsGoal);
     if (permille > 1000) permille = 1000;
     lv_arc_set_value(ring, (int32_t)permille);
 
@@ -253,7 +256,7 @@ void StepsApp::refreshUi()
     lv_obj_set_style_text_color(countLabel, goalDone ? lv_color_hex(COLOR_RING) : lv_color_white(), 0);
     lv_obj_align_to(countLabel, ring, LV_ALIGN_CENTER, 0, -8);
 
-    formatSteps(cfg::STEPS_GOAL, buf, sizeof(buf));
+    formatSteps(userSettings.stepsGoal, buf, sizeof(buf));
     lv_label_set_text_fmt(goalLabel, "/ %s", buf);
     lv_obj_align_to(goalLabel, ring, LV_ALIGN_CENTER, 0, 18);
 
@@ -288,7 +291,7 @@ bool StepsApp::onSerialCommand(const char *line)
         if (loaded) check();
         App::log(name(), "Oggi %lu passi (sensore %lu + salvati %lu), ieri %lu, obiettivo %lu %s",
                  (unsigned long)today(), (unsigned long)sensorSteps, (unsigned long)offset,
-                 (unsigned long)yesterdaySteps, (unsigned long)cfg::STEPS_GOAL,
+                 (unsigned long)yesterdaySteps, (unsigned long)userSettings.stepsGoal,
                  goalDone ? "(raggiunto)" : "");
         return true;
     }

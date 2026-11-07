@@ -38,6 +38,10 @@ public:
     // false subito dopo un risveglio
     bool touchAllowed() const;
 
+    // Da usare nei pulsanti delle app: false subito dopo un risveglio
+    // o se il "click" era in realta' uno scorrimento
+    bool clickAllowed() const;
+
 private:
     enum Page { FACE, MENU, APP };
 

@@ -3,6 +3,7 @@
 #include "screen.h"
 #include "app.h"
 #include "config.h"
+#include "user_settings.h"
 
 Screen screen;
 
@@ -10,7 +11,7 @@ void Screen::begin()
 {
     // All'avvio lo schermo parte acceso
     on = false;
-    if (timeoutMs == 0) timeoutMs = cfg::SCREEN_TIMEOUT_MS;
+    if (timeoutMs == 0) timeoutMs = userSettings.faceTimeoutMs();
     wake("avvio");
 }
 
@@ -32,7 +33,7 @@ void Screen::wake(const char *reason)
     App::notifyScreenOn();
     lv_timer_handler();
     instance.powerControl(POWER_DISPLAY_BACKLIGHT, true);
-    instance.setBrightness(cfg::SCREEN_BRIGHTNESS);
+    instance.setBrightness(userSettings.brightness);
     App::log(name(), "Acceso (%s)", reason);
 }
 

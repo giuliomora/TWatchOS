@@ -14,6 +14,7 @@
 #pragma once
 #include "watch_module.h"
 #include <stdint.h>
+#include <time.h>
 
 class WifiTime : public WatchModule {
 public:
@@ -27,6 +28,16 @@ public:
     // Avvia una sincronizzazione (se non ce n'e' gia' una in corso)
     void syncNow();
 
+    // Accende/spegne la sincronizzazione automatica (dalle impostazioni)
+    void setAutoSync(bool on);
+
+    // Stato, per le impostazioni
+    bool isConfigured() const { return enabled; }       // secrets.h compilato
+    bool isSyncing() const { return state != IDLE; }
+    bool hasSynced() const { return everSynced; }
+    bool lastAttemptFailed() const { return lastFailed; }
+    const struct tm &lastSyncTime() const { return lastSyncTm; }  // ora locale
+
 private:
     enum State { IDLE, CONNECTING, WAITING_TIME };
     void stop(bool success, const char *msg);
@@ -37,6 +48,8 @@ private:
     uint32_t nextAttempt = 0;    // quando riprovare (millis)
     uint32_t lastSyncOk = 0;     // ultima sincronizzazione riuscita (millis)
     bool everSynced = false;
+    bool lastFailed = false;
+    struct tm lastSyncTm = {};
 };
 
 extern WifiTime wifiTime;

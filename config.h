@@ -7,6 +7,14 @@
 
 namespace cfg {
 
+// Versione del firmware (mostrata in Impostazioni > Info)
+constexpr const char *FIRMWARE_VERSION = "0.7";
+
+// NOTA: luminosita', spegnimento schermo, polso, tocco, vibrazione,
+// obiettivo dei passi e ora automatica si cambiano anche dall'app
+// Impostazioni. I valori qui sotto sono quelli di partenza (e quelli
+// a cui si torna con "Ripristina impostazioni").
+
 // --- Schermo ------------------------------------------------
 // Dopo quanti millisecondi senza interazioni lo schermo si spegne
 constexpr uint32_t SCREEN_TIMEOUT_MS = 5000;
@@ -52,7 +60,7 @@ constexpr bool STEPS_GOAL_VIBRATE     = true;
 constexpr bool STEPS_GOAL_WAKE_SCREEN = true;
 
 // Mostra i passi sul quadrante, sotto la data
-constexpr bool STEPS_ON_WATCHFACE = true;
+constexpr bool STEPS_ON_WATCHFACE = true;   // valore di partenza (si cambia anche da Impostazioni)
 
 // Per le stime: lunghezza del passo (cm) e calorie ogni 1000 passi
 constexpr uint32_t STEP_LENGTH_CM      = 70;
@@ -65,7 +73,7 @@ constexpr uint32_t STEPS_CHECK_MIN = 5;
 constexpr uint32_t STEPS_SAVE_MIN = 15;
 
 // --- Cronometro --------------------------------------------
-// Vibrazione breve a ogni tocco su Avvia/Pausa, Giro, Stop
+// Vibrazione breve a ogni tocco sui pulsanti di cronometro e timer
 constexpr bool STOPWATCH_VIBRATE = true;
 
 // Mentre il cronometro conta, tenere lo schermo sempre acceso
@@ -75,6 +83,20 @@ constexpr bool STOPWATCH_KEEP_SCREEN_ON = false;
 
 // Mostra il cronometro sul quadrante (in alto a sinistra) se e' avviato o in pausa
 constexpr bool STOPWATCH_ON_WATCHFACE = true;
+
+// --- Timer (nell'app Tempo, insieme al cronometro) ----------
+// I tre pulsanti rapidi, in minuti
+constexpr uint32_t TIMER_PRESET_1_MIN = 5;
+constexpr uint32_t TIMER_PRESET_2_MIN = 10;
+constexpr uint32_t TIMER_PRESET_3_MIN = 15;
+
+// Allo scadere: vibra ogni TIMER_RING_PULSE_MS millisecondi,
+// finche' non tocchi Stop, al massimo per TIMER_RING_S secondi
+constexpr uint32_t TIMER_RING_PULSE_MS = 1500;
+constexpr uint32_t TIMER_RING_S = 60;
+
+// Mostra il timer sul quadrante (in alto a sinistra) se e' in corso o in pausa
+constexpr bool TIMER_ON_WATCHFACE = true;
 
 // --- Ora ---------------------------------------------------
 // Fuso orario con le regole di ora solare/legale (questo e' l'Italia).
@@ -86,6 +108,7 @@ constexpr const char *NTP_SERVER = "pool.ntp.org";
 constexpr uint32_t WIFI_SYNC_INTERVAL_H = 24;   // ogni quante ore risincronizzare
 constexpr uint32_t WIFI_RETRY_MIN = 15;         // se fallisce, riprova dopo N minuti
 constexpr uint32_t WIFI_TIMEOUT_MS = 20000;     // tempo massimo per collegarsi
+constexpr bool WIFI_AUTO_SYNC = true;           // sincronizzazione automatica (valore di partenza)
 
 // --- Risparmio energetico ----------------------------------
 // Velocita' del processore in MHz (80 basta e consuma meno; massimo 240)

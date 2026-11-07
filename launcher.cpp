@@ -4,6 +4,7 @@
 #include "screen.h"
 #include "app.h"
 #include "config.h"
+#include "user_settings.h"
 
 Launcher launcher;
 
@@ -111,11 +112,13 @@ void Launcher::buildMenu()
         lv_obj_remove_flag(tile, LV_OBJ_FLAG_SCROLLABLE);
         lv_obj_add_event_cb(tile, onTileClicked, LV_EVENT_CLICKED, app);
 
-        lv_obj_t *icon = lv_label_create(tile);
-        lv_obj_set_style_text_font(icon, &lv_font_montserrat_28, 0);
-        lv_obj_set_style_text_color(icon, lv_color_white(), 0);
-        lv_label_set_text(icon, app->icon());
-        lv_obj_align(icon, LV_ALIGN_CENTER, 0, -12);
+        if (!app->drawIcon(tile)) {
+            lv_obj_t *icon = lv_label_create(tile);
+            lv_obj_set_style_text_font(icon, &lv_font_montserrat_28, 0);
+            lv_obj_set_style_text_color(icon, lv_color_white(), 0);
+            lv_label_set_text(icon, app->icon());
+            lv_obj_align(icon, LV_ALIGN_CENTER, 0, -12);
+        }
 
         lv_obj_t *label = lv_label_create(tile);
         lv_obj_set_style_text_font(label, &lv_font_montserrat_14, 0);
@@ -145,17 +148,20 @@ void Launcher::buildAppScreen(int index)
     lv_label_set_text(arrow, LV_SYMBOL_LEFT);
     lv_obj_center(arrow);
 
-    // Titolo, sotto la barra della batteria
-    lv_obj_t *title = lv_label_create(scr);
-    lv_obj_set_style_text_font(title, &lv_font_montserrat_20, 0);
-    lv_obj_set_style_text_color(title, lv_color_hex(app->color()), 0);
-    lv_label_set_text(title, app->title());
-    lv_obj_align(title, LV_ALIGN_TOP_MID, 0, 38);
+    // Titolo, sotto la barra della batteria (se l'app lo vuole)
+    if (!app->hideTitle()) {
+        lv_obj_t *title = lv_label_create(scr);
+        lv_obj_set_style_text_font(title, &lv_font_montserrat_20, 0);
+        lv_obj_set_style_text_color(title, lv_color_hex(app->color()), 0);
+        lv_label_set_text(title, app->title());
+        lv_obj_align(title, LV_ALIGN_TOP_MID, 0, 38);
+    }
 
     // Area in cui l'app disegna il suo contenuto
+    const int contentY = app->hideTitle() ? 40 : 70;
     lv_obj_t *content = lv_obj_create(scr);
-    lv_obj_set_size(content, 240, 170);
-    lv_obj_set_pos(content, 0, 70);
+    lv_obj_set_size(content, 240, 240 - contentY);
+    lv_obj_set_pos(content, 0, contentY);
     lv_obj_set_style_bg_opa(content, LV_OPA_TRANSP, 0);
     lv_obj_set_style_border_width(content, 0, 0);
     lv_obj_set_style_pad_all(content, 0, 0);
@@ -190,7 +196,7 @@ void Launcher::showWatchface(bool animate)
     closeCurrentApp();
     load(faceScreen, false, animate);
     page = FACE;
-    screen.setTimeout(cfg::SCREEN_TIMEOUT_MS);
+    screen.setTimeout(userSettings.faceTimeoutMs());
 }
 
 void Launcher::showMenu(bool animate)
@@ -199,7 +205,7 @@ void Launcher::showMenu(bool animate)
     closeCurrentApp();
     load(menuScreen, forward, animate);
     page = MENU;
-    screen.setTimeout(cfg::MENU_TIMEOUT_MS);
+    screen.setTimeout(userSettings.menuTimeoutMs());
     App::log(name(), "Menu");
 }
 
@@ -221,6 +227,7 @@ void Launcher::openApp(WatchApp *app)
 
 void Launcher::back()
 {
+    if (page == APP && currentApp && currentApp->onBack()) return;  // l'app torna indietro da sola
     if (page == APP) showMenu();
     else if (page == MENU) showWatchface();
 }
@@ -240,11 +247,16 @@ bool Launcher::touchAllowed() const
     return (int32_t)(millis() - ignoreTouchUntil) >= 0;
 }
 
+bool Launcher::clickAllowed() const
+{
+    return touchAllowed() && !wasSwipe();
+}
+
 void Launcher::onScreenOn()
 {
     // Al risveglio si e' sempre sul quadrante (vedi onScreenOff)
     ignoreTouchesNow();
-    screen.setTimeout(cfg::SCREEN_TIMEOUT_MS);
+    screen.setTimeout(userSettings.faceTimeoutMs());
 }
 
 void Launcher::onScreenOff()

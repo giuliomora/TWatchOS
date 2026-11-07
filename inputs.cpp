@@ -5,6 +5,7 @@
 #include "screen.h"
 #include "app.h"
 #include "config.h"
+#include "user_settings.h"
 
 Inputs inputs;
 
@@ -29,7 +30,7 @@ static void onDeviceEvent(const DeviceEvent &event, void * /*user_data*/)
 {
     if (event.type == SENSOR_EVENT) {
         if (instance.getSensorEventType(event) == SENSOR_TILT_DETECTED &&
-            cfg::WAKE_ON_WRIST_TILT) {
+            userSettings.wristWake) {
             if (inputs.wristDebug) logWristPosition("Gesto del polso");
             screen.wake("polso");
         }
@@ -57,15 +58,16 @@ void Inputs::begin()
 
 void Inputs::update()
 {
-    if (cfg::WAKE_ON_TOUCH) pollTouch();
+    pollTouch();
 }
 
 void Inputs::pollTouch()
 {
     int16_t x, y;
     if (instance.getPoint(&x, &y, 1) > 0) {
-        // Ogni tocco accende lo schermo o lo tiene acceso
-        screen.wake("tocco");
+        // Ogni tocco tiene acceso lo schermo; lo accende solo se
+        // l'accensione col tocco e' attiva nelle impostazioni
+        if (screen.isOn() || userSettings.touchWake) screen.wake("tocco");
     }
 }
 

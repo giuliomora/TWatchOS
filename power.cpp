@@ -7,6 +7,7 @@
 #include "screen.h"
 #include "app.h"
 #include "config.h"
+#include "user_settings.h"
 
 Power power;
 
@@ -69,6 +70,15 @@ bool Power::usbConnected()
 
 void Power::update()
 {
+    // Cavo appena staccato: le statistiche ripartono da qui
+    // (cosi' il consumo misurato e' quello "dall'ultima ricarica")
+    const bool usb = usbConnected();
+    if (wasUsb && !usb) {
+        resetStats();
+        App::log(name(), "Cavo staccato: statistiche azzerate");
+    }
+    wasUsb = usb;
+
     if (!cfg::SLEEP_ENABLED) return;
     if (!App::canSleep()) return;
     if (!cfg::SLEEP_ON_USB && usbConnected()) return;
@@ -94,7 +104,7 @@ void Power::lightSleep(uint32_t maxMs)
     gpio_intr_disable((gpio_num_t)TP_INT);
     gpio_intr_disable((gpio_num_t)SENSOR_INT);
     gpio_intr_disable((gpio_num_t)PMU_INT);
-    if (cfg::WAKE_ON_TOUCH) gpio_wakeup_enable((gpio_num_t)TP_INT, GPIO_INTR_LOW_LEVEL);
+    if (userSettings.touchWake) gpio_wakeup_enable((gpio_num_t)TP_INT, GPIO_INTR_LOW_LEVEL);
     gpio_wakeup_enable((gpio_num_t)SENSOR_INT, GPIO_INTR_HIGH_LEVEL);
     if (cfg::WAKE_ON_CROWN_CLICK) gpio_wakeup_enable((gpio_num_t)PMU_INT, GPIO_INTR_LOW_LEVEL);
     esp_sleep_enable_gpio_wakeup();
@@ -139,11 +149,30 @@ void Power::lightSleep(uint32_t maxMs)
         wakeTilt++;  // lo schermo lo ha gia' acceso inputs
     } else if (sensorFired) {
         wakeSensorOther++;  // es. un passo: si torna a dormire
-    } else if (cfg::WAKE_ON_TOUCH) {
+    } else if (userSettings.touchWake) {
         // nessun'altra causa: e' stato il tocco
         wakeTouch++;
         screen.wake("tocco");
     }
+}
+
+Power::Usage Power::usage()
+{
+    Usage u;
+    u.onUsb = usbConnected();
+    u.sinceMs = millis() - statsSince;
+    const float hours = u.sinceMs / 3600000.0f;
+    u.sleepPct = u.sinceMs ? (100.0f * (float)sleptMs / (float)u.sinceMs) : 0;
+    u.pctPerHour = 0;
+    u.valid = false;
+    if (!u.onUsb && batteryAtStart >= 0 && hours >= 0.5f) {
+        const float used = batteryAtStart - instance.getBatteryPercent();
+        if (used > 0) {
+            u.pctPerHour = used / hours;
+            u.valid = true;
+        }
+    }
+    return u;
 }
 
 void Power::printStatus()

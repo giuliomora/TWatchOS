@@ -13,6 +13,7 @@
 #include <lvgl.h>
 #include "watch_module.h"
 #include "config.h"
+#include "user_settings.h"
 
 class WatchApp : public WatchModule {
 public:
@@ -25,6 +26,14 @@ public:
     // Colore del riquadro nel menu (es. 0x1E88E5)
     virtual uint32_t color() const { return 0x3A3A3C; }
 
+    // Icona disegnata a mano: se l'app la disegna dentro "tile"
+    // e restituisce true, il menu non usa icon()
+    virtual bool drawIcon(lv_obj_t * /*tile*/) { return false; }
+
+    // true = niente titolo in cima: l'area dell'app parte piu' in alto
+    // (240x200 invece di 240x170), es. per mettere delle schede
+    virtual bool hideTitle() const { return false; }
+
     // Disegna il contenuto dell'app dentro "parent" (chiamato una volta all'avvio)
     virtual void build(lv_obj_t * /*parent*/) {}
 
@@ -34,7 +43,12 @@ public:
 
     // Dopo quanto lo schermo si spegne mentre l'app e' aperta.
     // 0 = resta sempre acceso (es. cronometro in funzione).
-    virtual uint32_t screenTimeoutMs() const { return cfg::MENU_TIMEOUT_MS; }
+    virtual uint32_t screenTimeoutMs() const { return userSettings.menuTimeoutMs(); }
+
+    // Chiamato da "indietro" (freccia o scorrimento a destra) mentre l'app
+    // e' aperta. Restituisci true se l'app lo gestisce da sola (es. chiude
+    // una sua pagina interna); false = si torna al menu.
+    virtual bool onBack() { return false; }
 
     // Il nome del modulo (per i messaggi di debug) e' il titolo
     const char *name() const override { return title(); }

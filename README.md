@@ -6,7 +6,11 @@ Firmware modulare per lo smartwatch **LilyGO T-Watch S3**, scritto con Arduino I
 - Mostra ora e data.
 - Menu: tocca il quadrante per aprire la griglia con le app (per ora vuote); scorri verso destra o tocca la freccia in alto per tornare indietro.
 - Passi: anello verso l'obiettivo (6.000, in `config.h`), km e calorie stimati, passi di ieri; i passi si vedono anche sul quadrante. Azzeramento a mezzanotte e vibrazione all'obiettivo.
-- Cronometro: Avvia/Pausa, Giro (si vede l'ultimo), Stop; conta anche a schermo spento e compare sul quadrante in alto a sinistra.
+- App Tempo (icona dell'orologio), con due schede in alto:
+  - Cronometro: Avvia/Pausa, Giro (si vede l'ultimo), Stop.
+  - Timer: 5, 10, 15 minuti o "Altro" (rotelle minuti/secondi); allo scadere vibra finché non tocchi Stop.
+  - Contano anche a schermo spento e compaiono sul quadrante in alto a sinistra.
+- Impostazioni: luminosita', spegnimento schermo, polso, tocco, vibrazione, obiettivo passi, ora via Wi-Fi, pagina Info (batteria e sistema), ripristino. Si salvano in memoria.
 - Batteria in alto a destra: grigia, verde con il fulmine in carica, rossa sotto il 20%.
 - Lo schermo si accende ruotando il polso, toccando lo schermo o con un click breve sulla corona.
 - Si spegne da solo dopo 5 secondi (modificabile in `config.h`).
@@ -45,8 +49,13 @@ Comando `polso`: accende/spegne i messaggi di prova; a ogni gesto riconosciuto s
 Li conta il sensore di movimento da solo, anche a schermo spento.
 Comandi: `passi` (passi di oggi e di ieri), `passi vibra` (prova la vibrazione dell'obiettivo).
 
-## Cronometro
-Comando: `crono` (stato del cronometro). Impostazioni in `config.h` (vibrazione, schermo sempre acceso).
+## Cronometro e Timer
+Comandi: `crono` (stato del cronometro), `timer` (stato del timer), `timer 10` (timer di prova di 10 secondi).
+Impostazioni in `config.h` (vibrazione, pulsanti rapidi, durata dello squillo).
+
+## Impostazioni
+I valori di `config.h` sono quelli di partenza; quelli scelti sull'orologio restano salvati anche dopo un riavvio.
+Comandi: `impostazioni` (valori attuali), `impostazioni reset` (torna ai valori di `config.h`).
 
 ## Regolare l'ora a mano
 1. Apri *Tools → Serial Monitor*, imposta **115200 baud** e **Newline**.
@@ -69,7 +78,10 @@ L'ora resta salvata nell'orologio (RTC) finché la batteria non si scarica del t
 | `launcher.*` | navigazione quadrante → menu → app |
 | `watch_app.h` | interfaccia comune delle app |
 | `steps_app.*` | app Passi |
-| `stopwatch_app.*` | app Cronometro |
+| `stopwatch_app.*` | app Tempo (cronometro + schede) |
+| `countdown_timer.*` | timer (scheda dell'app Tempo) |
+| `settings_app.*` | app Impostazioni (lista e pagina Info) |
+| `user_settings.*` | impostazioni salvate in memoria |
 | `empty_app.*` | app vuote (segnaposto) |
 | `wifi_time.*` | ora automatica via Wi-Fi |
 | `secrets.example.h` | modello per `secrets.h` (nome e password del Wi-Fi) |

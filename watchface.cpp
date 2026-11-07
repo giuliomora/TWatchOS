@@ -5,7 +5,9 @@
 #include "screen.h"
 #include "steps_app.h"
 #include "stopwatch_app.h"
+#include "countdown_timer.h"
 #include "config.h"
+#include "user_settings.h"
 
 Watchface watchface;
 
@@ -13,6 +15,7 @@ static lv_obj_t *timeLabel = nullptr;
 static lv_obj_t *dateLabel = nullptr;
 static lv_obj_t *stepsLabel = nullptr;
 static lv_obj_t *stopwatchLabel = nullptr;
+static lv_obj_t *timerLabel = nullptr;
 
 static const char *GIORNI[] = {"Domenica", "Lunedi'", "Martedi'", "Mercoledi'",
                                "Giovedi'", "Venerdi'", "Sabato"};
@@ -40,13 +43,12 @@ void Watchface::begin()
     lv_label_set_text(dateLabel, "");
     lv_obj_align_to(dateLabel, timeLabel, LV_ALIGN_OUT_BOTTOM_MID, 0, 8);
 
-    // Passi di oggi, sotto la data (verdi a obiettivo raggiunto)
-    if (cfg::STEPS_ON_WATCHFACE) {
-        stepsLabel = lv_label_create(scr);
-        lv_obj_set_style_text_font(stepsLabel, &lv_font_montserrat_16, 0);
-        lv_obj_set_style_text_color(stepsLabel, lv_color_hex(0x9AA0A6), 0);
-        lv_label_set_text(stepsLabel, "");
-    }
+    // Passi di oggi, sotto la data (verdi a obiettivo raggiunto).
+    // Si possono nascondere dalle impostazioni.
+    stepsLabel = lv_label_create(scr);
+    lv_obj_set_style_text_font(stepsLabel, &lv_font_montserrat_16, 0);
+    lv_obj_set_style_text_color(stepsLabel, lv_color_hex(0x9AA0A6), 0);
+    lv_label_set_text(stepsLabel, "");
 
     // Cronometro in alto a sinistra (solo se avviato o in pausa)
     if (cfg::STOPWATCH_ON_WATCHFACE) {
@@ -55,6 +57,14 @@ void Watchface::begin()
         lv_label_set_text(stopwatchLabel, "");
         lv_obj_align(stopwatchLabel, LV_ALIGN_TOP_LEFT, 8, 6);
         lv_obj_add_flag(stopwatchLabel, LV_OBJ_FLAG_HIDDEN);
+    }
+
+    // Timer in alto a sinistra (sotto il cronometro, se c'e' anche quello)
+    if (cfg::TIMER_ON_WATCHFACE) {
+        timerLabel = lv_label_create(scr);
+        lv_obj_set_style_text_font(timerLabel, &lv_font_montserrat_16, 0);
+        lv_label_set_text(timerLabel, "");
+        lv_obj_add_flag(timerLabel, LV_OBJ_FLAG_HIDDEN);
     }
 
     refresh();
@@ -86,7 +96,10 @@ void Watchface::refresh()
     lv_label_set_text_fmt(dateLabel, "%s %d %s", GIORNI[wd], t.tm_mday, MESI[mo]);
     lv_obj_align_to(dateLabel, timeLabel, LV_ALIGN_OUT_BOTTOM_MID, 0, 8);
 
-    if (stepsLabel) {
+    if (stepsLabel && !userSettings.stepsOnFace) {
+        lv_obj_add_flag(stepsLabel, LV_OBJ_FLAG_HIDDEN);
+    } else if (stepsLabel) {
+        lv_obj_remove_flag(stepsLabel, LV_OBJ_FLAG_HIDDEN);
         char buf[16];
         formatSteps(stepsApp.today(), buf, sizeof(buf));
         lv_label_set_text_fmt(stepsLabel, "%s passi", buf);
@@ -105,6 +118,21 @@ void Watchface::refresh()
             lv_obj_remove_flag(stopwatchLabel, LV_OBJ_FLAG_HIDDEN);
         } else {
             lv_obj_add_flag(stopwatchLabel, LV_OBJ_FLAG_HIDDEN);
+        }
+    }
+
+    if (timerLabel) {
+        if (countdownTimer.isActive()) {
+            char buf[16];
+            CountdownTimer::formatRemaining(countdownTimer.remainingUs(), buf, sizeof(buf));
+            const bool run = countdownTimer.isRunning();
+            lv_label_set_text_fmt(timerLabel, "%s %s", run ? LV_SYMBOL_DOWN : LV_SYMBOL_PAUSE, buf);
+            lv_obj_set_style_text_color(timerLabel, lv_color_hex(run ? 0x26C6DA : 0x9AA0A6), 0);
+            const bool below = stopwatchLabel && stopwatchApp.isActive();
+            lv_obj_align(timerLabel, LV_ALIGN_TOP_LEFT, 8, below ? 26 : 6);
+            lv_obj_remove_flag(timerLabel, LV_OBJ_FLAG_HIDDEN);
+        } else {
+            lv_obj_add_flag(timerLabel, LV_OBJ_FLAG_HIDDEN);
         }
     }
 }

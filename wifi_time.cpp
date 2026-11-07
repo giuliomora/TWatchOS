@@ -7,6 +7,7 @@
 #include "time_service.h"
 #include "app.h"
 #include "config.h"
+#include "user_settings.h"
 #include "secrets.h"
 
 WifiTime wifiTime;
@@ -23,7 +24,23 @@ void WifiTime::begin()
         return;
     }
     sntp_set_time_sync_notification_cb(onTimeSync);
-    syncNow();  // prima sincronizzazione all'avvio
+    if (userSettings.autoSync) syncNow();  // prima sincronizzazione all'avvio
+    else App::log(name(), "Sincronizzazione automatica spenta (Impostazioni)");
+}
+
+void WifiTime::setAutoSync(bool on)
+{
+    if (!enabled) return;
+    if (on) {
+        // se non c'e' gia' un tentativo in programma, prova tra poco
+        if (state == IDLE && nextAttempt == 0) {
+            nextAttempt = millis() + 2000;
+            if (nextAttempt == 0) nextAttempt = 1;
+        }
+    } else {
+        nextAttempt = 0;  // niente piu' tentativi automatici
+    }
+    App::log(name(), "Sincronizzazione automatica %s", on ? "accesa" : "spenta");
 }
 
 void WifiTime::syncNow()
@@ -84,9 +101,11 @@ void WifiTime::stop(bool success, const char *msg)
     state = IDLE;
 
     uint32_t delayMs;
+    lastFailed = !success;
     if (success) {
         everSynced = true;
         lastSyncOk = millis();
+        lastSyncTm = timeService.now();
         delayMs = cfg::WIFI_SYNC_INTERVAL_H * 3600UL * 1000UL;
         App::log(name(), "OK, %s. Wi-Fi spento.", msg);
     } else {
@@ -96,6 +115,7 @@ void WifiTime::stop(bool success, const char *msg)
     }
     nextAttempt = millis() + delayMs;
     if (nextAttempt == 0) nextAttempt = 1;
+    if (!userSettings.autoSync) nextAttempt = 0;  // solo a mano, dalle impostazioni
 }
 
 uint32_t WifiTime::msUntilNextWork()

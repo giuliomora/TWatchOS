@@ -29,6 +29,16 @@ public:
     void update() override;
     bool onSerialCommand(const char *line) override;
 
+    // Consumi, per la pagina Info delle impostazioni
+    struct Usage {
+        bool onUsb;          // cavo collegato
+        uint32_t sinceMs;    // da quanto si misura (dall'avvio o da quando hai staccato il cavo)
+        float sleepPct;      // % del tempo in sospensione
+        bool valid;          // false = consumo non ancora misurabile
+        float pctPerHour;    // consumo medio, % di batteria all'ora
+    };
+    Usage usage();
+
 private:
     void lightSleep(uint32_t maxMs);
     bool usbConnected();
@@ -46,6 +56,7 @@ private:
     // Cache dello stato USB (leggerlo costa una richiesta al chip)
     bool usbCached = false;
     uint32_t usbCheckedAt = 0;
+    bool wasUsb = false;
 };
 
 extern Power power;

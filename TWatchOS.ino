@@ -13,7 +13,10 @@
 //    launcher.*        navigazione quadrante -> menu -> app
 //    watch_app.h       interfaccia comune delle app
 //    steps_app.*       app Passi (contapassi, anche sul quadrante)
-//    stopwatch_app.*   app Cronometro
+//    stopwatch_app.*   app Tempo: cronometro + schede
+//    countdown_timer.* timer (scheda dell'app Tempo)
+//    settings_app.*    app Impostazioni
+//    user_settings.*   impostazioni salvate in memoria
 //    empty_app.*       app vuote (segnaposto) del menu
 //    wifi_time.*       sincronizzazione automatica dell'ora via Wi-Fi
 //    secrets.h         nome e password del Wi-Fi
@@ -29,6 +32,7 @@
 #include <LV_Helper.h>
 
 #include "app.h"
+#include "user_settings.h"
 #include "screen.h"
 #include "inputs.h"
 #include "time_service.h"
@@ -37,6 +41,8 @@
 #include "launcher.h"
 #include "steps_app.h"
 #include "stopwatch_app.h"
+#include "countdown_timer.h"
+#include "settings_app.h"
 #include "empty_app.h"
 #include "wifi_time.h"
 #include "power.h"
@@ -52,6 +58,7 @@ void setup()
     // Moduli: vengono avviati in questo ordine.
     // Lo schermo va per ultimo, cosi' quando si accende
     // il quadrante e' gia' pronto.
+    App::add(&userSettings);   // per primo: gli altri moduli leggono le impostazioni
     App::add(&timeService);
     App::add(&wifiTime);
     App::add(&watchface);
@@ -62,6 +69,7 @@ void setup()
     launcher.addApp(&stopwatchApp);
     launcher.addApp(&batteryApp);
     launcher.addApp(&settingsApp);
+    App::add(&countdownTimer);   // il timer (lo disegna l'app Tempo)
     App::add(&launcher);
 
     App::add(&inputs);
