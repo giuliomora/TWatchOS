@@ -8,7 +8,7 @@
 namespace cfg {
 
 // Versione del firmware (mostrata in Impostazioni > Info)
-constexpr const char *FIRMWARE_VERSION = "0.7";
+constexpr const char *FIRMWARE_VERSION = "0.8";
 
 // NOTA: luminosita', spegnimento schermo, polso, tocco, vibrazione,
 // obiettivo dei passi e ora automatica si cambiano anche dall'app
@@ -97,6 +97,27 @@ constexpr uint32_t TIMER_RING_S = 60;
 
 // Mostra il timer sul quadrante (in alto a sinistra) se e' in corso o in pausa
 constexpr bool TIMER_ON_WATCHFACE = true;
+
+// --- Radar (app Radar: dispositivi Bluetooth vicini) --------
+// Durata di una passata del sonar (la riga che sale o che scende), in ms
+constexpr uint32_t RADAR_SWEEP_MS = 2000;
+// Ogni quanti millisecondi si ridisegna la riga del sonar (50 = 20 volte al secondo)
+constexpr uint32_t RADAR_FRAME_MS = 50;
+// Un dispositivo che non si sente da N secondi sparisce dal radar
+constexpr uint32_t RADAR_DEVICE_TIMEOUT_S = 30;
+// Quanti dispositivi al massimo sul radar
+constexpr int RADAR_MAX_DEVICES = 32;
+// Potenza del segnale (dBm) che corrisponde al centro e al bordo del radar
+constexpr int RADAR_RSSI_NEAR = -40;
+constexpr int RADAR_RSSI_FAR = -100;
+// false = solo ascolto. true = chiede ai dispositivi anche il nome
+// (si vedono piu' nomi, ma l'orologio trasmette una breve richiesta)
+constexpr bool RADAR_ACTIVE_SCAN = false;
+// Scheda Wi-Fi (ascolto passivo delle probe request)
+constexpr int RADAR_PROBE_MAX_DEVICES = 40;    // quanti dispositivi al massimo in lista
+constexpr uint32_t RADAR_PROBE_HOP_MS = 250;   // ogni quanto cambiare canale Wi-Fi
+constexpr int RADAR_PROBE_CHANNELS = 13;       // canali su cui ascoltare (1..13)
+constexpr int RADAR_PROBE_MAX_SSID = 8;        // nomi di rete al massimo per dispositivo
 
 // --- Ora ---------------------------------------------------
 // Fuso orario con le regole di ora solare/legale (questo e' l'Italia).

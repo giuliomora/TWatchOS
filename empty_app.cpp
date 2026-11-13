@@ -1,8 +1,8 @@
 #include "empty_app.h"
 
-// Icone provvisorie: LVGL non ha icone di passi o cronometro,
-// in futuro si potranno disegnare icone personalizzate.
-EmptyApp batteryApp("Batteria", LV_SYMBOL_BATTERY_FULL, 0x1565C0);
+// Per usarla: crea un'istanza, es.
+//   EmptyApp provaApp("Prova", LV_SYMBOL_HOME, 0x1565C0);
+// e registrala nel .ino con launcher.addApp(&provaApp);
 
 void EmptyApp::build(lv_obj_t *parent)
 {

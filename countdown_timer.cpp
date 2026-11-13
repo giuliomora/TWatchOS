@@ -37,7 +37,7 @@ static lv_obj_t *pauseIcon = nullptr;
 static int64_t nowUs() { return esp_timer_get_time(); }
 
 enum Action { PRESET_1, PRESET_2, PRESET_3, OPEN_PICKER, PICKER_CANCEL, PICKER_START,
-              PAUSE_RESUME, CANCEL, STOP_RING };
+              PAUSE_RESUME, CANCEL_TIMER, STOP_RING };
 
 static void onButton(lv_event_t *e)
 {
@@ -50,7 +50,7 @@ static void onButton(lv_event_t *e)
     case PICKER_CANCEL: countdownTimer.closePicker(); break;
     case PICKER_START:  countdownTimer.startFromPicker(); break;
     case PAUSE_RESUME:  countdownTimer.pauseResume(); break;
-    case CANCEL:        countdownTimer.cancel(); break;
+    case CANCEL_TIMER:        countdownTimer.cancel(); break;
     case STOP_RING:     countdownTimer.stopRinging(); break;
     }
 }
@@ -172,7 +172,7 @@ void CountdownTimer::build(lv_obj_t *parent)
     lv_obj_set_style_text_color(leftLabel, lv_color_white(), 0);
     pauseBtn = makeButton(runBox, LV_SYMBOL_PAUSE, &lv_font_montserrat_24, COLOR_PAUSE, 14, 108, 102, 50,
                           PAUSE_RESUME, &pauseIcon);
-    makeButton(runBox, LV_SYMBOL_CLOSE, &lv_font_montserrat_24, COLOR_CANCEL, 124, 108, 102, 50, CANCEL);
+    makeButton(runBox, LV_SYMBOL_CLOSE, &lv_font_montserrat_24, COLOR_CANCEL, 124, 108, 102, 50, CANCEL_TIMER);
 
     // 4) Tempo scaduto
     ringBox = makeBox(parent);

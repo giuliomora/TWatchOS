@@ -17,7 +17,8 @@
 //    countdown_timer.* timer (scheda dell'app Tempo)
 //    settings_app.*    app Impostazioni
 //    user_settings.*   impostazioni salvate in memoria
-//    empty_app.*       app vuote (segnaposto) del menu
+//    radar_app.*       app Radar (dispositivi Bluetooth vicini)
+//    empty_app.*       modello di app vuota (per ora non usato)
 //    wifi_time.*       sincronizzazione automatica dell'ora via Wi-Fi
 //    secrets.h         nome e password del Wi-Fi
 //    power.*           risparmio energetico (sospensione a schermo spento)
@@ -43,7 +44,8 @@
 #include "stopwatch_app.h"
 #include "countdown_timer.h"
 #include "settings_app.h"
-#include "empty_app.h"
+#include "radar_app.h"
+#include "wifi_probe.h"
 #include "wifi_time.h"
 #include "power.h"
 
@@ -67,9 +69,10 @@ void setup()
     // App del menu (griglia 2x2, in questo ordine)
     launcher.addApp(&stepsApp);
     launcher.addApp(&stopwatchApp);
-    launcher.addApp(&batteryApp);
+    launcher.addApp(&radarApp);
     launcher.addApp(&settingsApp);
     App::add(&countdownTimer);   // il timer (lo disegna l'app Tempo)
+    App::add(&wifiProbe);        // scheda Wi-Fi del Radar (la disegna l'app Radar)
     App::add(&launcher);
 
     App::add(&inputs);

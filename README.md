@@ -4,13 +4,14 @@ Firmware modulare per lo smartwatch **LilyGO T-Watch S3**, scritto con Arduino I
 
 ## Cosa fa adesso
 - Mostra ora e data.
-- Menu: tocca il quadrante per aprire la griglia con le app (per ora vuote); scorri verso destra o tocca la freccia in alto per tornare indietro.
+- Menu: tocca il quadrante per aprire la griglia con le app (Passi, Tempo, Radar, Impostazioni); scorri verso destra o tocca la freccia in alto per tornare indietro.
 - Passi: anello verso l'obiettivo (6.000, in `config.h`), km e calorie stimati, passi di ieri; i passi si vedono anche sul quadrante. Azzeramento a mezzanotte e vibrazione all'obiettivo.
 - App Tempo (icona dell'orologio), con due schede in alto:
   - Cronometro: Avvia/Pausa, Giro (si vede l'ultimo), Stop.
   - Timer: 5, 10, 15 minuti o "Altro" (rotelle minuti/secondi); allo scadere vibra finché non tocchi Stop.
   - Contano anche a schermo spento e compaiono sul quadrante in alto a sinistra.
 - Impostazioni: luminosita', spegnimento schermo, polso, tocco, vibrazione, obiettivo passi, ora via Wi-Fi, pagina Info (batteria e sistema), ripristino. Si salvano in memoria.
+- App Radar: premi Avvia e sul radar compaiono i dispositivi Bluetooth vicini (cuffie, telefoni, orologi, TV...), colorati per tipo; toccandone uno vedi nome, produttore, tipo e indirizzo. Solo ascolto. Il Bluetooth è acceso solo durante la scansione: si ferma con Stop o uscendo dall'app. Comando: `radar`.
 - Batteria in alto a destra: grigia, verde con il fulmine in carica, rossa sotto il 20%.
 - Lo schermo si accende ruotando il polso, toccando lo schermo o con un click breve sulla corona.
 - Si spegne da solo dopo 5 secondi (modificabile in `config.h`).
@@ -20,6 +21,7 @@ Firmware modulare per lo smartwatch **LilyGO T-Watch S3**, scritto con Arduino I
 ## Requisiti
 - Arduino IDE 2 con **esp32 by Espressif** 3.3.x
 - Librerie **LilyGoLib** e **LilyGoLib-ThirdParty** nella cartella `libraries`
+- Libreria **NimBLE-Arduino** 2.x (per l'app Radar)
 
 ## Come caricarlo
 1. Copia la cartella `TWatchOS` nella cartella degli sketch
@@ -82,7 +84,8 @@ L'ora resta salvata nell'orologio (RTC) finché la batteria non si scarica del t
 | `countdown_timer.*` | timer (scheda dell'app Tempo) |
 | `settings_app.*` | app Impostazioni (lista e pagina Info) |
 | `user_settings.*` | impostazioni salvate in memoria |
-| `empty_app.*` | app vuote (segnaposto) |
+| `radar_app.*` | app Radar (dispositivi Bluetooth vicini) |
+| `empty_app.*` | modello di app vuota (non usato) |
 | `wifi_time.*` | ora automatica via Wi-Fi |
 | `secrets.example.h` | modello per `secrets.h` (nome e password del Wi-Fi) |
 | `power.*` | risparmio energetico |

@@ -24,5 +24,3 @@ private:
     uint32_t appColor;
 };
 
-// App del menu ancora vuote (le altre app hanno il loro file)
-extern EmptyApp batteryApp;
