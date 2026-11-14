@@ -8,6 +8,7 @@
 #include "countdown_timer.h"
 #include "config.h"
 #include "user_settings.h"
+#include "theme.h"
 
 Watchface watchface;
 
@@ -16,6 +17,7 @@ static lv_obj_t *dateLabel = nullptr;
 static lv_obj_t *stepsLabel = nullptr;
 static lv_obj_t *stopwatchLabel = nullptr;
 static lv_obj_t *timerLabel = nullptr;
+static lv_point_precise_t groundPts[2][2];  // le due righe in basso, come sul Pokekron
 
 static const char *GIORNI[] = {"Domenica", "Lunedi'", "Martedi'", "Mercoledi'",
                                "Giovedi'", "Venerdi'", "Sabato"};
@@ -25,44 +27,54 @@ static const char *MESI[] = {"gen", "feb", "mar", "apr", "mag", "giu",
 void Watchface::begin()
 {
     lv_obj_t *scr = lv_screen_active();
-    lv_obj_set_style_bg_color(scr, lv_color_black(), 0);
-    lv_obj_set_style_bg_opa(scr, LV_OPA_COVER, 0);
-    lv_obj_remove_flag(scr, LV_OBJ_FLAG_SCROLLABLE);
+    pk::styleScreen(scr);
+    // Mentre lo tocchi lo schermo si schiarisce, come la retroilluminazione del Pokekron
+    lv_obj_set_style_bg_color(scr, pk::color(pk::LIT), LV_STATE_PRESSED);
 
-    // Ora, grande e al centro
+    // Righe decorative in basso
+    pk::hline(scr, groundPts[0], 2, 238, 225, 2, pk::SHADE);
+    pk::hline(scr, groundPts[1], 2, 238, 231, 2, pk::SHADE);
+
+    // Figura in pixel art in basso a sinistra, appoggiata sulle righe,
+    // nel tono "sbiadito" come sul Pokekron. E' un carattere del font
+    // pk_sprite (pochi byte, niente immagini): per cambiarla vedi
+    // tools/fontgen/glyphs.py (SPRITE).
+    lv_obj_t *sprite = lv_label_create(scr);
+    pk::styleLabel(sprite, &pk_sprite, pk::MID);
+    lv_label_set_text(sprite, "A");
+    lv_obj_align(sprite, LV_ALIGN_BOTTOM_LEFT, 8, -16);
+
+    // Ora, grande e al centro, con le cifre a blocchi
     timeLabel = lv_label_create(scr);
-    lv_obj_set_style_text_font(timeLabel, &lv_font_montserrat_48, 0);
-    lv_obj_set_style_text_color(timeLabel, lv_color_white(), 0);
+    pk::styleLabel(timeLabel, &pk_digits_l);
     lv_label_set_text(timeLabel, "--:--");
-    lv_obj_align(timeLabel, LV_ALIGN_CENTER, 0, -15);
+    lv_obj_align(timeLabel, LV_ALIGN_CENTER, 0, -28);  // piu' in alto: sotto c'e' la figura
 
     // Data, sotto l'ora
     dateLabel = lv_label_create(scr);
-    lv_obj_set_style_text_font(dateLabel, &lv_font_montserrat_20, 0);
-    lv_obj_set_style_text_color(dateLabel, lv_color_hex(0x9AA0A6), 0);
+    pk::styleLabel(dateLabel, &pk_font_text);
     lv_label_set_text(dateLabel, "");
-    lv_obj_align_to(dateLabel, timeLabel, LV_ALIGN_OUT_BOTTOM_MID, 0, 8);
+    lv_obj_align_to(dateLabel, timeLabel, LV_ALIGN_OUT_BOTTOM_MID, 0, 10);
 
-    // Passi di oggi, sotto la data (verdi a obiettivo raggiunto).
+    // Passi di oggi, sotto la data (piu' scuri a obiettivo raggiunto).
     // Si possono nascondere dalle impostazioni.
     stepsLabel = lv_label_create(scr);
-    lv_obj_set_style_text_font(stepsLabel, &lv_font_montserrat_16, 0);
-    lv_obj_set_style_text_color(stepsLabel, lv_color_hex(0x9AA0A6), 0);
+    pk::styleLabel(stepsLabel, &pk_font_text, pk::DIM);
     lv_label_set_text(stepsLabel, "");
 
     // Cronometro in alto a sinistra (solo se avviato o in pausa)
     if (cfg::STOPWATCH_ON_WATCHFACE) {
         stopwatchLabel = lv_label_create(scr);
-        lv_obj_set_style_text_font(stopwatchLabel, &lv_font_montserrat_16, 0);
+        pk::styleLabel(stopwatchLabel, &pk_font_text);
         lv_label_set_text(stopwatchLabel, "");
-        lv_obj_align(stopwatchLabel, LV_ALIGN_TOP_LEFT, 8, 6);
+        lv_obj_align(stopwatchLabel, LV_ALIGN_TOP_LEFT, 8, 8);
         lv_obj_add_flag(stopwatchLabel, LV_OBJ_FLAG_HIDDEN);
     }
 
     // Timer in alto a sinistra (sotto il cronometro, se c'e' anche quello)
     if (cfg::TIMER_ON_WATCHFACE) {
         timerLabel = lv_label_create(scr);
-        lv_obj_set_style_text_font(timerLabel, &lv_font_montserrat_16, 0);
+        pk::styleLabel(timerLabel, &pk_font_text);
         lv_label_set_text(timerLabel, "");
         lv_obj_add_flag(timerLabel, LV_OBJ_FLAG_HIDDEN);
     }
@@ -94,7 +106,7 @@ void Watchface::refresh()
     int wd = (t.tm_wday >= 0 && t.tm_wday < 7) ? t.tm_wday : 0;
     int mo = (t.tm_mon >= 0 && t.tm_mon < 12) ? t.tm_mon : 0;
     lv_label_set_text_fmt(dateLabel, "%s %d %s", GIORNI[wd], t.tm_mday, MESI[mo]);
-    lv_obj_align_to(dateLabel, timeLabel, LV_ALIGN_OUT_BOTTOM_MID, 0, 8);
+    lv_obj_align_to(dateLabel, timeLabel, LV_ALIGN_OUT_BOTTOM_MID, 0, 10);
 
     if (stepsLabel && !userSettings.stepsOnFace) {
         lv_obj_add_flag(stepsLabel, LV_OBJ_FLAG_HIDDEN);
@@ -104,8 +116,8 @@ void Watchface::refresh()
         formatSteps(stepsApp.today(), buf, sizeof(buf));
         lv_label_set_text_fmt(stepsLabel, "%s passi", buf);
         lv_obj_set_style_text_color(stepsLabel,
-            lv_color_hex(stepsApp.goalReached() ? 0x34C759 : 0x9AA0A6), 0);
-        lv_obj_align_to(stepsLabel, dateLabel, LV_ALIGN_OUT_BOTTOM_MID, 0, 10);
+            pk::color(stepsApp.goalReached() ? pk::INK : pk::DIM), 0);
+        lv_obj_align_to(stepsLabel, dateLabel, LV_ALIGN_OUT_BOTTOM_MID, 0, 4);
     }
 
     if (stopwatchLabel) {
@@ -114,7 +126,7 @@ void Watchface::refresh()
             StopwatchApp::formatShort(stopwatchApp.elapsedUs(), buf, sizeof(buf));
             const bool run = stopwatchApp.isRunning();
             lv_label_set_text_fmt(stopwatchLabel, "%s %s", run ? LV_SYMBOL_PLAY : LV_SYMBOL_PAUSE, buf);
-            lv_obj_set_style_text_color(stopwatchLabel, lv_color_hex(run ? 0xEF6C00 : 0x9AA0A6), 0);
+            lv_obj_set_style_text_color(stopwatchLabel, pk::color(run ? pk::INK : pk::DIM), 0);
             lv_obj_remove_flag(stopwatchLabel, LV_OBJ_FLAG_HIDDEN);
         } else {
             lv_obj_add_flag(stopwatchLabel, LV_OBJ_FLAG_HIDDEN);
@@ -127,9 +139,9 @@ void Watchface::refresh()
             CountdownTimer::formatRemaining(countdownTimer.remainingUs(), buf, sizeof(buf));
             const bool run = countdownTimer.isRunning();
             lv_label_set_text_fmt(timerLabel, "%s %s", run ? LV_SYMBOL_DOWN : LV_SYMBOL_PAUSE, buf);
-            lv_obj_set_style_text_color(timerLabel, lv_color_hex(run ? 0x26C6DA : 0x9AA0A6), 0);
+            lv_obj_set_style_text_color(timerLabel, pk::color(run ? pk::INK : pk::DIM), 0);
             const bool below = stopwatchLabel && stopwatchApp.isActive();
-            lv_obj_align(timerLabel, LV_ALIGN_TOP_LEFT, 8, below ? 26 : 6);
+            lv_obj_align(timerLabel, LV_ALIGN_TOP_LEFT, 8, below ? 28 : 8);
             lv_obj_remove_flag(timerLabel, LV_OBJ_FLAG_HIDDEN);
         } else {
             lv_obj_add_flag(timerLabel, LV_OBJ_FLAG_HIDDEN);

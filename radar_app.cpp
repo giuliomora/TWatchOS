@@ -12,6 +12,7 @@
 #include "app.h"
 #include "config.h"
 #include "user_settings.h"
+#include "theme.h"
 
 RadarApp radarApp;
 
@@ -26,28 +27,16 @@ static const int LEFT = CX - SQ / 2;       // 32
 static const int TOP = CY - SQ / 2;        // 4
 static const int RIGHT = CX + SQ / 2;      // 208
 static const int BOTTOM = CY + SQ / 2;     // 180
-static const int DOT = 10;                 // diametro dei puntini
+static const int DOT = 12;                 // lato dei puntini (bordo compreso)
+static const int DOT_BORDER = 2;           // bordo color inchiostro dei puntini
 static const int TRAIL = 5;                // righe della scia (la prima e' la riga viva)
 static const int TRAIL_STEP = 7;           // distanza in pixel tra le righe della scia
 
-// ---- Colori ---------------------------------------------------
-static const uint32_t COLOR_BG     = 0x04140A;
-static const uint32_t COLOR_RING   = 0x1B5E20;
-static const uint32_t COLOR_SWEEP  = 0x00E676;
-static const uint32_t COLOR_START  = 0x2E7D32;  // verde
-static const uint32_t COLOR_STOP   = 0xC62828;  // rosso
-static const uint32_t COLOR_GRAY   = 0x9AA0A6;
-static const uint32_t COLOR_CARD   = 0x1C1C1E;
-static const uint32_t COLOR_BT     = 0x2E7D32;  // scheda Bluetooth attiva
-static const uint32_t COLOR_WIFI   = 0x00838F;  // scheda Wi-Fi attiva
-static const uint32_t COLOR_TAB_OFF = 0x2C2C2E;
-
-// ---- Colori per produttore ------------------------------------
-static const uint32_t MAKER_COLORS[] = {
-    0x66BB6A, 0x29B6F6, 0xFFB300, 0xAB47BC, 0xEF5350,
-    0x26A69A, 0xFF7043, 0x5C6BC0, 0xEC407A, 0x9CCC65};
-static const int MAKER_COLOR_COUNT = sizeof(MAKER_COLORS) / sizeof(MAKER_COLORS[0]);
-static const uint32_t COLOR_UNKNOWN = 0x9E9E9E;
+// Colori: quelli del tema (theme.h). I puntini sono quadratini con il
+// bordo color inchiostro, riempiti con il colore di sfondo di un'altra
+// palette del Pokekron: stesso produttore = stesso colore. Il colore
+// della palette attiva viene saltato (si confonderebbe con lo sfondo).
+// Produttore sconosciuto = quadratino vuoto (solo il bordo).
 
 // ---- Produttori (codici ufficiali Bluetooth SIG) --------------
 struct Company { uint16_t id; const char *name; };
@@ -140,11 +129,14 @@ static const char *companyName(uint16_t id, char *buf, size_t size)
     return buf;
 }
 
+// Colore di riempimento per un produttore: lo sfondo di una delle 7
+// palette diverse da quella attiva
 static uint32_t colorForCompany(uint16_t id)
 {
-    if (id == NO_COMPANY) return COLOR_UNKNOWN;
-    const int idx = (id ^ (id >> 8)) % MAKER_COLOR_COUNT;
-    return MAKER_COLORS[idx];
+    const int others = pk::PALETTE_COUNT - 1;
+    int p = (id ^ (id >> 8)) % others;
+    if (p >= pk::palette()) p++;   // salta la palette attiva
+    return pk::paletteBg(p);
 }
 
 static uint16_t angleFor(const char *addr)
@@ -186,9 +178,22 @@ static void placeDot(Device &d)
     lv_obj_set_pos(d.dot, x - DOT / 2, d.y - DOT / 2);
 }
 
+// Trasparenza del puntino (si schiarisce lontano dalla riga del sonar).
+// Lo sconosciuto resta vuoto: si vede solo il bordo.
+static void setDotOpa(Device &d)
+{
+    if (!d.dot) return;
+    lv_obj_set_style_border_opa(d.dot, d.opa, 0);
+    lv_obj_set_style_bg_opa(d.dot, d.company == NO_COMPANY ? LV_OPA_TRANSP : d.opa, 0);
+}
+
 static void colorDot(Device &d)
 {
-    if (d.dot) lv_obj_set_style_bg_color(d.dot, lv_color_hex(colorForCompany(d.company)), 0);
+    if (!d.dot) return;
+    lv_obj_set_style_border_color(d.dot, pk::color(pk::INK), 0);
+    if (d.company != NO_COMPANY)
+        lv_obj_set_style_bg_color(d.dot, pk::color(colorForCompany(d.company)), 0);
+    setDotOpa(d);
 }
 
 static void onDotClicked(lv_event_t *e)
@@ -203,14 +208,13 @@ static void createDot(int index)
     if (!dotLayer) return;
     d.dot = lv_obj_create(dotLayer);
     lv_obj_set_size(d.dot, DOT, DOT);
-    lv_obj_set_style_radius(d.dot, LV_RADIUS_CIRCLE, 0);
-    lv_obj_set_style_border_width(d.dot, 0, 0);
+    lv_obj_set_style_radius(d.dot, 0, 0);   // quadratino, come i pixel dello schermo LCD
+    lv_obj_set_style_border_width(d.dot, DOT_BORDER, 0);
     lv_obj_set_style_pad_all(d.dot, 0, 0);
     lv_obj_remove_flag(d.dot, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_set_ext_click_area(d.dot, 8);
     lv_obj_add_event_cb(d.dot, onDotClicked, LV_EVENT_CLICKED, (void *)(intptr_t)index);
     d.opa = 255;
-    lv_obj_set_style_bg_opa(d.dot, d.opa, 0);
     colorDot(d);
     placeDot(d);
 }
@@ -243,13 +247,20 @@ static void onTab(lv_event_t *e)
 
 // ---- Icona del menu: un piccolo radar --------------------------
 
+void RadarApp::onPaletteChanged()
+{
+    // I colori dei produttori dipendono dalla palette attiva
+    for (Device &d : devices)
+        if (d.used) colorDot(d);
+}
+
 bool RadarApp::drawIcon(lv_obj_t *tile)
 {
     lv_obj_t *box = lv_obj_create(tile);
     lv_obj_set_size(box, 34, 34);
-    lv_obj_set_style_radius(box, 4, 0);
+    lv_obj_set_style_radius(box, 0, 0);
     lv_obj_set_style_bg_opa(box, LV_OPA_TRANSP, 0);
-    lv_obj_set_style_border_color(box, lv_color_white(), 0);
+    lv_obj_set_style_border_color(box, pk::color(pk::INK), 0);
     lv_obj_set_style_border_width(box, 2, 0);
     lv_obj_set_style_pad_all(box, 0, 0);
     lv_obj_remove_flag(box, LV_OBJ_FLAG_SCROLLABLE);
@@ -260,14 +271,14 @@ bool RadarApp::drawIcon(lv_obj_t *tile)
     lv_obj_t *l = lv_line_create(box);
     lv_line_set_points(l, line, 2);
     lv_obj_set_style_line_width(l, 2, 0);
-    lv_obj_set_style_line_color(l, lv_color_hex(COLOR_SWEEP), 0);
+    lv_obj_set_style_line_color(l, pk::color(pk::INK), 0);
     lv_obj_remove_flag(l, LV_OBJ_FLAG_CLICKABLE);
     lv_obj_set_pos(l, 0, 0);
 
     lv_obj_t *blip = lv_obj_create(box);
     lv_obj_set_size(blip, 6, 6);
-    lv_obj_set_style_radius(blip, LV_RADIUS_CIRCLE, 0);
-    lv_obj_set_style_bg_color(blip, lv_color_hex(COLOR_SWEEP), 0);
+    lv_obj_set_style_radius(blip, 0, 0);
+    lv_obj_set_style_bg_color(blip, pk::color(pk::INK), 0);
     lv_obj_set_style_border_width(blip, 0, 0);
     lv_obj_remove_flag(blip, LV_OBJ_FLAG_CLICKABLE);
     lv_obj_set_pos(blip, 20, 8);
@@ -283,12 +294,10 @@ void RadarApp::buildTabs(lv_obj_t *parent)
         tabBtn[i] = lv_button_create(parent);
         lv_obj_set_size(tabBtn[i], 116, TABS_H);
         lv_obj_set_pos(tabBtn[i], i ? 122 : 2, 0);
-        lv_obj_set_style_radius(tabBtn[i], 6, 0);
-        lv_obj_set_style_shadow_width(tabBtn[i], 0, 0);
         lv_obj_set_style_pad_all(tabBtn[i], 0, 0);
         lv_obj_add_event_cb(tabBtn[i], onTab, LV_EVENT_CLICKED, (void *)(intptr_t)i);
         tabText[i] = lv_label_create(tabBtn[i]);
-        lv_obj_set_style_text_font(tabText[i], &lv_font_montserrat_14, 0);
+        lv_obj_set_style_text_font(tabText[i], &pk_font_small, 0);
         lv_label_set_text(tabText[i], labels[i]);
         lv_obj_center(tabText[i]);
     }
@@ -296,17 +305,13 @@ void RadarApp::buildTabs(lv_obj_t *parent)
     pageBT = lv_obj_create(parent);
     lv_obj_set_size(pageBT, 240, PAGE_H);
     lv_obj_set_pos(pageBT, 0, TABS_H);
-    lv_obj_set_style_bg_opa(pageBT, LV_OPA_TRANSP, 0);
-    lv_obj_set_style_border_width(pageBT, 0, 0);
-    lv_obj_set_style_pad_all(pageBT, 0, 0);
+    pk::styleClear(pageBT);
     lv_obj_remove_flag(pageBT, LV_OBJ_FLAG_SCROLLABLE);
 
     pageWifi = lv_obj_create(parent);
     lv_obj_set_size(pageWifi, 240, PAGE_H);
     lv_obj_set_pos(pageWifi, 0, TABS_H);
-    lv_obj_set_style_bg_opa(pageWifi, LV_OPA_TRANSP, 0);
-    lv_obj_set_style_border_width(pageWifi, 0, 0);
-    lv_obj_set_style_pad_all(pageWifi, 0, 0);
+    pk::styleClear(pageWifi);
     lv_obj_remove_flag(pageWifi, LV_OBJ_FLAG_SCROLLABLE);
 }
 
@@ -315,11 +320,11 @@ void RadarApp::buildRadar(lv_obj_t *parent)
     lv_obj_t *bg = lv_obj_create(parent);
     lv_obj_set_size(bg, SQ, SQ);
     lv_obj_set_pos(bg, LEFT, TOP);
-    lv_obj_set_style_bg_color(bg, lv_color_hex(COLOR_BG), 0);
+    lv_obj_set_style_bg_color(bg, pk::color(pk::BG), 0);
     lv_obj_set_style_bg_opa(bg, LV_OPA_COVER, 0);
-    lv_obj_set_style_border_color(bg, lv_color_hex(COLOR_RING), 0);
-    lv_obj_set_style_border_width(bg, 1, 0);
-    lv_obj_set_style_radius(bg, 4, 0);
+    lv_obj_set_style_border_color(bg, pk::color(pk::INK), 0);
+    lv_obj_set_style_border_width(bg, 2, 0);
+    lv_obj_set_style_radius(bg, 0, 0);
     lv_obj_set_style_pad_all(bg, 0, 0);
     lv_obj_remove_flag(bg, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_remove_flag(bg, LV_OBJ_FLAG_CLICKABLE);
@@ -336,8 +341,7 @@ void RadarApp::buildRadar(lv_obj_t *parent)
             lv_obj_t *g = lv_line_create(parent);
             lv_line_set_points(g, pts, 2);
             lv_obj_set_style_line_width(g, 1, 0);
-            lv_obj_set_style_line_color(g, lv_color_hex(COLOR_RING), 0);
-            lv_obj_set_style_line_opa(g, k == 2 ? LV_OPA_COVER : LV_OPA_50, 0);
+            lv_obj_set_style_line_color(g, pk::color(k == 2 ? pk::MID : pk::SHADE), 0);
             lv_obj_remove_flag(g, LV_OBJ_FLAG_CLICKABLE);
             lv_obj_set_pos(g, 0, 0);
         }
@@ -347,9 +351,9 @@ void RadarApp::buildRadar(lv_obj_t *parent)
     for (int i = TRAIL - 1; i >= 0; i--) {
         sweep[i] = lv_line_create(parent);
         lv_obj_set_style_line_width(sweep[i], i == 0 ? 3 : 2, 0);
-        lv_obj_set_style_line_color(sweep[i], lv_color_hex(COLOR_SWEEP), 0);
+        lv_obj_set_style_line_color(sweep[i], pk::color(pk::INK), 0);
         lv_obj_set_style_line_opa(sweep[i], trailOpa[i], 0);
-        lv_obj_set_style_line_rounded(sweep[i], true, 0);
+        lv_obj_set_style_line_rounded(sweep[i], false, 0);
         lv_obj_remove_flag(sweep[i], LV_OBJ_FLAG_CLICKABLE);
         lv_obj_set_pos(sweep[i], 0, 0);
         setSonarLine(i, CY);
@@ -358,20 +362,16 @@ void RadarApp::buildRadar(lv_obj_t *parent)
     dotLayer = lv_obj_create(parent);
     lv_obj_set_size(dotLayer, 240, PAGE_H);
     lv_obj_set_pos(dotLayer, 0, 0);
-    lv_obj_set_style_bg_opa(dotLayer, LV_OPA_TRANSP, 0);
-    lv_obj_set_style_border_width(dotLayer, 0, 0);
-    lv_obj_set_style_pad_all(dotLayer, 0, 0);
+    pk::styleClear(dotLayer);
     lv_obj_remove_flag(dotLayer, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_remove_flag(dotLayer, LV_OBJ_FLAG_CLICKABLE);
 
     countLabel = lv_label_create(parent);
-    lv_obj_set_style_text_font(countLabel, &lv_font_montserrat_14, 0);
-    lv_obj_set_style_text_color(countLabel, lv_color_hex(COLOR_SWEEP), 0);
+    pk::styleLabel(countLabel, &pk_font_small);
     lv_obj_set_pos(countLabel, LEFT + 6, TOP + 4);
 
     hintLabel = lv_label_create(parent);
-    lv_obj_set_style_text_font(hintLabel, &lv_font_montserrat_14, 0);
-    lv_obj_set_style_text_color(hintLabel, lv_color_hex(COLOR_GRAY), 0);
+    pk::styleLabel(hintLabel, &pk_font_small, pk::DIM);
     lv_label_set_text(hintLabel, "Premi Avvia");
     lv_obj_align(hintLabel, LV_ALIGN_CENTER, 0, -14);
 }
@@ -386,24 +386,18 @@ void RadarApp::build(lv_obj_t *parent)
     actionBtn = lv_button_create(parent);
     lv_obj_set_size(actionBtn, 46, 46);
     lv_obj_align(actionBtn, LV_ALIGN_BOTTOM_RIGHT, -6, -6);
-    lv_obj_set_style_radius(actionBtn, 12, 0);
+    pk::styleButton(actionBtn);
     lv_obj_set_style_bg_opa(actionBtn, LV_OPA_80, 0);   // semitrasparente
-    lv_obj_set_style_shadow_width(actionBtn, 0, 0);
     lv_obj_add_event_cb(actionBtn, onActionClicked, LV_EVENT_CLICKED, nullptr);
     actionIcon = lv_label_create(actionBtn);
-    lv_obj_set_style_text_font(actionIcon, &lv_font_montserrat_20, 0);
-    lv_obj_set_style_text_color(actionIcon, lv_color_white(), 0);
+    lv_obj_set_style_text_font(actionIcon, &lv_font_montserrat_20, 0);   // colore: quello del pulsante
     lv_obj_center(actionIcon);
 
     // Scheda dettagli Bluetooth (sopra a tutto, nascosta)
     card = lv_obj_create(parent);
     lv_obj_set_size(card, 216, 130);
     lv_obj_align(card, LV_ALIGN_CENTER, 0, 0);
-    lv_obj_set_style_bg_color(card, lv_color_hex(COLOR_CARD), 0);
-    lv_obj_set_style_bg_opa(card, LV_OPA_COVER, 0);
-    lv_obj_set_style_border_color(card, lv_color_hex(COLOR_RING), 0);
-    lv_obj_set_style_border_width(card, 2, 0);
-    lv_obj_set_style_radius(card, 16, 0);
+    pk::styleBox(card, 3);
     lv_obj_set_style_pad_all(card, 12, 0);
     lv_obj_remove_flag(card, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_add_event_cb(card, onCardClicked, LV_EVENT_CLICKED, nullptr);
@@ -411,14 +405,12 @@ void RadarApp::build(lv_obj_t *parent)
     cardName = lv_label_create(card);
     lv_obj_set_width(cardName, 188);
     lv_label_set_long_mode(cardName, LV_LABEL_LONG_DOT);
-    lv_obj_set_style_text_font(cardName, &lv_font_montserrat_16, 0);
-    lv_obj_set_style_text_color(cardName, lv_color_white(), 0);
+    pk::styleLabel(cardName, &pk_font_text);
     lv_obj_set_pos(cardName, 0, 0);
 
     cardInfo = lv_label_create(card);
     lv_obj_set_width(cardInfo, 188);
-    lv_obj_set_style_text_font(cardInfo, &lv_font_montserrat_14, 0);
-    lv_obj_set_style_text_color(cardInfo, lv_color_hex(COLOR_GRAY), 0);
+    pk::styleLabel(cardInfo, &pk_font_small);
     lv_obj_set_style_text_line_space(cardInfo, 4, 0);
     lv_obj_set_pos(cardInfo, 0, 28);
     lv_obj_add_flag(card, LV_OBJ_FLAG_HIDDEN);
@@ -437,9 +429,7 @@ void RadarApp::showTab(Tab t)
     tab = t;
     for (int i = 0; i < 2; i++) {
         const bool on = (i == (int)t);
-        const uint32_t col = (i == 0) ? COLOR_BT : COLOR_WIFI;
-        lv_obj_set_style_bg_color(tabBtn[i], lv_color_hex(on ? col : COLOR_TAB_OFF), 0);
-        lv_obj_set_style_text_color(tabText[i], on ? lv_color_white() : lv_color_hex(COLOR_GRAY), 0);
+        pk::styleTab(tabBtn[i], tabText[i], on);
     }
     if (t == TAB_BT) {
         lv_obj_remove_flag(pageBT, LV_OBJ_FLAG_HIDDEN);
@@ -474,7 +464,8 @@ void RadarApp::refreshUi()
 {
     if (!actionBtn) return;
     const bool active = (tab == TAB_BT) ? scanning : wifiProbe.isScanning();
-    lv_obj_set_style_bg_color(actionBtn, lv_color_hex(active ? COLOR_STOP : COLOR_START), 0);
+    pk::styleButton(actionBtn, active);   // in scansione: pieno
+    lv_obj_set_style_bg_opa(actionBtn, LV_OPA_80, 0);   // semitrasparente
     lv_label_set_text(actionIcon, active ? LV_SYMBOL_STOP : LV_SYMBOL_PLAY);
 
     // Elementi della scheda Bluetooth
@@ -644,7 +635,7 @@ void RadarApp::updateSweep()
         if (opa < 70) opa = 70;
         if (abs(opa - (int)d.opa) >= 8) {
             d.opa = opa;
-            lv_obj_set_style_bg_opa(d.dot, opa, 0);
+            setDotOpa(d);
         }
     }
 }

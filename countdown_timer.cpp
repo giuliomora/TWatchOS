@@ -11,15 +11,10 @@
 #include "app.h"
 #include "config.h"
 #include "user_settings.h"
+#include "theme.h"
 
 CountdownTimer countdownTimer;
 
-static const uint32_t COLOR_TIMER  = 0x00838F;  // azzurro petrolio
-static const uint32_t COLOR_DARK   = 0x3A3A3C;
-static const uint32_t COLOR_START  = 0x2E7D32;  // verde
-static const uint32_t COLOR_PAUSE  = 0xEF6C00;  // arancione
-static const uint32_t COLOR_CANCEL = 0xC62828;  // rosso
-static const uint32_t COLOR_RING_BG = 0x2C2C2E;
 
 // Le quattro "viste" della scheda (una sola visibile alla volta)
 static lv_obj_t *setupBox = nullptr;
@@ -61,27 +56,23 @@ static lv_obj_t *makeBox(lv_obj_t *parent)
     lv_obj_t *box = lv_obj_create(parent);
     lv_obj_set_size(box, lv_pct(100), lv_pct(100));
     lv_obj_set_pos(box, 0, 0);
-    lv_obj_set_style_bg_opa(box, LV_OPA_TRANSP, 0);
-    lv_obj_set_style_border_width(box, 0, 0);
-    lv_obj_set_style_pad_all(box, 0, 0);
+    pk::styleClear(box);
     lv_obj_remove_flag(box, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_add_flag(box, LV_OBJ_FLAG_HIDDEN);
     return box;
 }
 
-static lv_obj_t *makeButton(lv_obj_t *parent, const char *text, const lv_font_t *font, uint32_t color,
+// filled = pulsante pieno (scuro): per l'azione principale
+static lv_obj_t *makeButton(lv_obj_t *parent, const char *text, const lv_font_t *font, bool filled,
                             int x, int y, int w, int h, Action action, lv_obj_t **labelOut = nullptr)
 {
     lv_obj_t *btn = lv_button_create(parent);
     lv_obj_set_size(btn, w, h);
     lv_obj_set_pos(btn, x, y);
-    lv_obj_set_style_bg_color(btn, lv_color_hex(color), 0);
-    lv_obj_set_style_radius(btn, 16, 0);
-    lv_obj_set_style_shadow_width(btn, 0, 0);
+    pk::styleButton(btn, filled);
     lv_obj_add_event_cb(btn, onButton, LV_EVENT_CLICKED, (void *)(intptr_t)action);
     lv_obj_t *label = lv_label_create(btn);
-    lv_obj_set_style_text_font(label, font, 0);
-    lv_obj_set_style_text_color(label, lv_color_white(), 0);
+    lv_obj_set_style_text_font(label, font, 0);   // colore: quello del pulsante
     lv_label_set_text(label, text);
     lv_obj_center(label);
     if (labelOut) *labelOut = label;
@@ -105,12 +96,9 @@ static lv_obj_t *makeRoller(lv_obj_t *parent, int maxValue, int x)
     lv_roller_set_visible_row_count(r, 3);
     lv_obj_set_size(r, 76, 100);   // non deve coprire i pulsanti sotto
     lv_obj_set_pos(r, x, 0);
-    lv_obj_set_style_text_font(r, &lv_font_montserrat_24, 0);
-    lv_obj_set_style_bg_color(r, lv_color_hex(0x1C1C1E), 0);
-    lv_obj_set_style_border_width(r, 0, 0);
-    lv_obj_set_style_text_color(r, lv_color_hex(0x9AA0A6), 0);
-    lv_obj_set_style_bg_color(r, lv_color_hex(COLOR_TIMER), LV_PART_SELECTED);
-    lv_obj_set_style_text_color(r, lv_color_white(), LV_PART_SELECTED);
+    lv_obj_set_style_text_font(r, &pk_digits_s, 0);
+    lv_obj_set_style_text_line_space(r, 4, 0);
+    pk::styleRoller(r);
     return r;
 }
 
@@ -132,12 +120,12 @@ void CountdownTimer::build(lv_obj_t *parent)
     // 1) Scelta rapida: griglia 2x2
     setupBox = makeBox(parent);
     snprintf(text, sizeof(text), "%lu min", (unsigned long)cfg::TIMER_PRESET_1_MIN);
-    makeButton(setupBox, text, &lv_font_montserrat_22, COLOR_TIMER, 14, 2, 102, 72, PRESET_1);
+    makeButton(setupBox, text, &pk_font_big, false, 14, 2, 102, 72, PRESET_1);
     snprintf(text, sizeof(text), "%lu min", (unsigned long)cfg::TIMER_PRESET_2_MIN);
-    makeButton(setupBox, text, &lv_font_montserrat_22, COLOR_TIMER, 124, 2, 102, 72, PRESET_2);
+    makeButton(setupBox, text, &pk_font_big, false, 124, 2, 102, 72, PRESET_2);
     snprintf(text, sizeof(text), "%lu min", (unsigned long)cfg::TIMER_PRESET_3_MIN);
-    makeButton(setupBox, text, &lv_font_montserrat_22, COLOR_TIMER, 14, 82, 102, 72, PRESET_3);
-    makeButton(setupBox, "Altro", &lv_font_montserrat_22, COLOR_DARK, 124, 82, 102, 72, OPEN_PICKER);
+    makeButton(setupBox, text, &pk_font_big, false, 14, 82, 102, 72, PRESET_3);
+    makeButton(setupBox, "Altro", &pk_font_big, true, 124, 82, 102, 72, OPEN_PICKER);
 
     // 2) Rotelle minuti : secondi
     pickerBox = makeBox(parent);
@@ -145,12 +133,11 @@ void CountdownTimer::build(lv_obj_t *parent)
     secRoller = makeRoller(pickerBox, 59, 128);
     lv_roller_set_selected(minRoller, 1, LV_ANIM_OFF);
     lv_obj_t *colon = lv_label_create(pickerBox);
-    lv_obj_set_style_text_font(colon, &lv_font_montserrat_24, 0);
-    lv_obj_set_style_text_color(colon, lv_color_white(), 0);
+    pk::styleLabel(colon, &pk_digits_s);
     lv_label_set_text(colon, ":");
     lv_obj_align_to(colon, minRoller, LV_ALIGN_OUT_RIGHT_MID, 6, 0);
-    makeButton(pickerBox, "Annulla", &lv_font_montserrat_18, COLOR_DARK, 14, 110, 102, 48, PICKER_CANCEL);
-    makeButton(pickerBox, LV_SYMBOL_PLAY " Avvia", &lv_font_montserrat_18, COLOR_START, 124, 110, 102, 48, PICKER_START);
+    makeButton(pickerBox, "Annulla", &pk_font_text, false, 14, 110, 102, 48, PICKER_CANCEL);
+    makeButton(pickerBox, LV_SYMBOL_PLAY " Avvia", &pk_font_text, true, 124, 110, 102, 48, PICKER_START);
 
     // 3) Conto alla rovescia: anello che si svuota
     runBox = makeBox(parent);
@@ -162,26 +149,20 @@ void CountdownTimer::build(lv_obj_t *parent)
     lv_arc_set_range(arc, 0, 1000);
     lv_obj_remove_style(arc, NULL, LV_PART_KNOB);
     lv_obj_remove_flag(arc, LV_OBJ_FLAG_CLICKABLE);
-    lv_obj_set_style_arc_width(arc, 10, LV_PART_MAIN);
-    lv_obj_set_style_arc_width(arc, 10, LV_PART_INDICATOR);
-    lv_obj_set_style_arc_color(arc, lv_color_hex(COLOR_RING_BG), LV_PART_MAIN);
-    lv_obj_set_style_arc_color(arc, lv_color_hex(COLOR_TIMER), LV_PART_INDICATOR);
-    lv_obj_set_style_arc_rounded(arc, true, LV_PART_INDICATOR);
+    pk::styleArc(arc, 10);
     leftLabel = lv_label_create(runBox);
-    lv_obj_set_style_text_font(leftLabel, &lv_font_montserrat_24, 0);
-    lv_obj_set_style_text_color(leftLabel, lv_color_white(), 0);
-    pauseBtn = makeButton(runBox, LV_SYMBOL_PAUSE, &lv_font_montserrat_24, COLOR_PAUSE, 14, 108, 102, 50,
+    pk::styleLabel(leftLabel, &pk_digits_s);
+    pauseBtn = makeButton(runBox, LV_SYMBOL_PAUSE, &lv_font_montserrat_24, true, 14, 108, 102, 50,
                           PAUSE_RESUME, &pauseIcon);
-    makeButton(runBox, LV_SYMBOL_CLOSE, &lv_font_montserrat_24, COLOR_CANCEL, 124, 108, 102, 50, CANCEL_TIMER);
+    makeButton(runBox, LV_SYMBOL_CLOSE, &lv_font_montserrat_24, false, 124, 108, 102, 50, CANCEL_TIMER);
 
     // 4) Tempo scaduto
     ringBox = makeBox(parent);
     lv_obj_t *msg = lv_label_create(ringBox);
-    lv_obj_set_style_text_font(msg, &lv_font_montserrat_24, 0);
-    lv_obj_set_style_text_color(msg, lv_color_hex(COLOR_PAUSE), 0);
+    pk::styleLabel(msg, &pk_font_big);
     lv_label_set_text(msg, "Tempo scaduto!");
     lv_obj_align(msg, LV_ALIGN_TOP_MID, 0, 6);
-    makeButton(ringBox, LV_SYMBOL_STOP " Stop", &lv_font_montserrat_28, COLOR_CANCEL, 20, 50, 200, 90, STOP_RING);
+    makeButton(ringBox, LV_SYMBOL_STOP " Stop", &pk_font_big, true, 20, 50, 200, 90, STOP_RING);
 
     refreshUi();
 }
@@ -206,11 +187,17 @@ void CountdownTimer::refreshUi()
         char buf[16];
         formatRemaining(left, buf, sizeof(buf));
         lv_label_set_text(leftLabel, buf);
+        // oltre l'ora ("1:00:00") le cifre grandi non entrano nell'anello
+        lv_obj_set_style_text_font(leftLabel, strlen(buf) > 5 ? &pk_font_big : &pk_digits_s, 0);
         lv_obj_align_to(leftLabel, arc, LV_ALIGN_CENTER, 0, 0);
         const int32_t permille = totalUs > 0 ? (int32_t)(left * 1000 / totalUs) : 0;
         lv_arc_set_value(arc, permille < 0 ? 0 : permille);
-        lv_label_set_text(pauseIcon, st == RUNNING ? LV_SYMBOL_PAUSE : LV_SYMBOL_PLAY);
-        lv_obj_set_style_bg_color(pauseBtn, lv_color_hex(st == RUNNING ? COLOR_PAUSE : COLOR_START), 0);
+        static int pauseFilled = -1;   // ridisegna il pulsante solo quando cambia
+        if (pauseFilled != (int)(st == RUNNING)) {
+            pauseFilled = (int)(st == RUNNING);
+            lv_label_set_text(pauseIcon, st == RUNNING ? LV_SYMBOL_PAUSE : LV_SYMBOL_PLAY);
+            pk::styleButton(pauseBtn, st == RUNNING);   // in corso: pieno; in pausa: solo bordo
+        }
     }
 }
 

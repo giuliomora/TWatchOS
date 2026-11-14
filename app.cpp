@@ -5,7 +5,7 @@
 #include "config.h"
 
 namespace {
-constexpr int MAX_MODULES = 16;
+constexpr int MAX_MODULES = 24;
 WatchModule *modules[MAX_MODULES];
 int moduleCount = 0;
 

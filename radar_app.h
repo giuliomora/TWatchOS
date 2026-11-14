@@ -15,7 +15,8 @@
 //  Scheda Bluetooth:
 //    - distanza dal centro = potenza del segnale (vicino = al centro)
 //    - direzione = finta ma fissa per ogni dispositivo
-//    - colore = produttore (stesso produttore, stesso colore)
+//    - colore = produttore (stesso produttore, stesso colore): i colori
+//      sono quelli delle altre palette del Pokekron; vuoto = sconosciuto
 //  Toccando un puntino: nome, produttore, indirizzo.
 //
 //  Comando dal Serial Monitor:
@@ -39,6 +40,7 @@ public:
     void build(lv_obj_t *parent) override;
     void onClose() override;
     bool onBack() override;
+    void onPaletteChanged() override;   // ricolora i puntini
     bool onSerialCommand(const char *line) override;
     bool canSleep() override;
     uint32_t screenTimeoutMs() const override;

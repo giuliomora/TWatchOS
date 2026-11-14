@@ -3,15 +3,12 @@
 #include "status_bar.h"
 #include "screen.h"
 #include "config.h"
+#include "theme.h"
 
 StatusBar statusBar;
 
 static lv_obj_t *batteryLabel = nullptr;
 
-// Colori della batteria
-static const uint32_t COLOR_NORMAL   = 0x9AA0A6;  // grigio
-static const uint32_t COLOR_CHARGING = 0x34C759;  // verde
-static const uint32_t COLOR_LOW      = 0xFF3B30;  // rosso
 
 // Icona della batteria in base alla percentuale
 static const char *batteryIcon(int pct)
@@ -27,10 +24,11 @@ void StatusBar::begin()
 {
     // Sul livello "sopra" a tutte le schermate: si vede ovunque
     batteryLabel = lv_label_create(lv_layer_top());
-    lv_obj_set_style_text_font(batteryLabel, &lv_font_montserrat_16, 0);
-    lv_obj_set_style_text_color(batteryLabel, lv_color_hex(COLOR_NORMAL), 0);
+    pk::styleLabel(batteryLabel, &pk_font_small);
+    lv_obj_set_style_pad_hor(batteryLabel, 3, 0);
+    lv_obj_set_style_pad_ver(batteryLabel, 1, 0);
     lv_label_set_text(batteryLabel, "");
-    lv_obj_align(batteryLabel, LV_ALIGN_TOP_RIGHT, -8, 6);
+    lv_obj_align(batteryLabel, LV_ALIGN_TOP_RIGHT, -6, 6);
     refresh();
 }
 
@@ -56,15 +54,16 @@ void StatusBar::refresh()
     if (pct > 100) pct = 100;
     const bool charging = instance.isCharging();
 
-    uint32_t color = COLOR_NORMAL;
-    if (charging) color = COLOR_CHARGING;
-    else if (pct < cfg::BATTERY_LOW_PCT) color = COLOR_LOW;
+    // Batteria scarica: scritta chiara su fondo scuro (in negativo), per farsi notare
+    const bool low = !charging && pct < cfg::BATTERY_LOW_PCT;
 
     if (charging) {
         lv_label_set_text_fmt(batteryLabel, "%d%% " LV_SYMBOL_CHARGE " %s", pct, batteryIcon(pct));
     } else {
         lv_label_set_text_fmt(batteryLabel, "%d%% %s", pct, batteryIcon(pct));
     }
-    lv_obj_set_style_text_color(batteryLabel, lv_color_hex(color), 0);
-    lv_obj_align(batteryLabel, LV_ALIGN_TOP_RIGHT, -8, 6);
+    lv_obj_set_style_text_color(batteryLabel, pk::color(low ? pk::BG : pk::INK), 0);
+    lv_obj_set_style_bg_color(batteryLabel, pk::color(pk::INK), 0);
+    lv_obj_set_style_bg_opa(batteryLabel, low ? LV_OPA_COVER : LV_OPA_TRANSP, 0);
+    lv_obj_align(batteryLabel, LV_ALIGN_TOP_RIGHT, -6, 6);
 }

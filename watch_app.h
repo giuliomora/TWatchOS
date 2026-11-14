@@ -23,7 +23,8 @@ public:
     // Icona del menu (un simbolo LVGL, es. LV_SYMBOL_SETTINGS)
     virtual const char *icon() const = 0;
 
-    // Colore del riquadro nel menu (es. 0x1E88E5)
+    // Colore dell'app (es. 0x1E88E5). Con il tema Pokekron (theme.h)
+    // menu e titoli sono monocromatici, quindi non viene usato.
     virtual uint32_t color() const { return 0x3A3A3C; }
 
     // Icona disegnata a mano: se l'app la disegna dentro "tile"
@@ -49,6 +50,11 @@ public:
     // e' aperta. Restituisci true se l'app lo gestisce da sola (es. chiude
     // una sua pagina interna); false = si torna al menu.
     virtual bool onBack() { return false; }
+
+    // Chiamato dopo un cambio di colore dello schermo, quando le schermate
+    // sono gia' state ricolorate. Serve solo alle app che usano colori
+    // fuori dalla palette (es. i puntini del Radar).
+    virtual void onPaletteChanged() {}
 
     // Il nome del modulo (per i messaggi di debug) e' il titolo
     const char *name() const override { return title(); }

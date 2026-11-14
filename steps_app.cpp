@@ -10,6 +10,7 @@
 #include "app.h"
 #include "config.h"
 #include "user_settings.h"
+#include "theme.h"
 
 StepsApp stepsApp;
 
@@ -19,9 +20,6 @@ static lv_obj_t *goalLabel = nullptr;
 static lv_obj_t *infoLabel = nullptr;
 static lv_obj_t *yesterdayLabel = nullptr;
 
-static const uint32_t COLOR_RING_BG = 0x2C2C2E;  // anello vuoto
-static const uint32_t COLOR_RING    = 0x34C759;  // anello pieno (verde)
-static const uint32_t COLOR_GRAY    = 0x9AA0A6;
 
 void formatSteps(uint32_t n, char *out, size_t size)
 {
@@ -214,29 +212,21 @@ void StepsApp::build(lv_obj_t *parent)
     lv_arc_set_value(ring, 0);
     lv_obj_remove_style(ring, NULL, LV_PART_KNOB);
     lv_obj_remove_flag(ring, LV_OBJ_FLAG_CLICKABLE);
-    lv_obj_set_style_arc_width(ring, 12, LV_PART_MAIN);
-    lv_obj_set_style_arc_width(ring, 12, LV_PART_INDICATOR);
-    lv_obj_set_style_arc_color(ring, lv_color_hex(COLOR_RING_BG), LV_PART_MAIN);
-    lv_obj_set_style_arc_color(ring, lv_color_hex(COLOR_RING), LV_PART_INDICATOR);
-    lv_obj_set_style_arc_rounded(ring, true, LV_PART_INDICATOR);
+    pk::styleArc(ring, 12);
 
     // Passi al centro, obiettivo sotto
     countLabel = lv_label_create(parent);
-    lv_obj_set_style_text_font(countLabel, &lv_font_montserrat_28, 0);
-    lv_obj_set_style_text_color(countLabel, lv_color_white(), 0);
+    pk::styleLabel(countLabel, &pk_digits_s);
 
     goalLabel = lv_label_create(parent);
-    lv_obj_set_style_text_font(goalLabel, &lv_font_montserrat_14, 0);
-    lv_obj_set_style_text_color(goalLabel, lv_color_hex(COLOR_GRAY), 0);
+    pk::styleLabel(goalLabel, &pk_font_small, pk::DIM);
 
     // Km e calorie, poi i passi di ieri
     infoLabel = lv_label_create(parent);
-    lv_obj_set_style_text_font(infoLabel, &lv_font_montserrat_16, 0);
-    lv_obj_set_style_text_color(infoLabel, lv_color_white(), 0);
+    pk::styleLabel(infoLabel, &pk_font_text);
 
     yesterdayLabel = lv_label_create(parent);
-    lv_obj_set_style_text_font(yesterdayLabel, &lv_font_montserrat_14, 0);
-    lv_obj_set_style_text_color(yesterdayLabel, lv_color_hex(COLOR_GRAY), 0);
+    pk::styleLabel(yesterdayLabel, &pk_font_small, pk::DIM);
 
     refreshUi();
 }
@@ -253,23 +243,28 @@ void StepsApp::refreshUi()
 
     formatSteps(steps, buf, sizeof(buf));
     lv_label_set_text(countLabel, buf);
-    lv_obj_set_style_text_color(countLabel, goalDone ? lv_color_hex(COLOR_RING) : lv_color_white(), 0);
+    // Obiettivo raggiunto: numero in negativo (chiaro su fondo scuro)
+    lv_obj_set_style_text_color(countLabel, pk::color(goalDone ? pk::BG : pk::INK), 0);
+    lv_obj_set_style_bg_color(countLabel, pk::color(pk::INK), 0);
+    lv_obj_set_style_bg_opa(countLabel, goalDone ? LV_OPA_COVER : LV_OPA_TRANSP, 0);
+    lv_obj_set_style_pad_hor(countLabel, 3, 0);
+    lv_obj_set_style_pad_ver(countLabel, 2, 0);
     lv_obj_align_to(countLabel, ring, LV_ALIGN_CENTER, 0, -8);
 
     formatSteps(userSettings.stepsGoal, buf, sizeof(buf));
     lv_label_set_text_fmt(goalLabel, "/ %s", buf);
-    lv_obj_align_to(goalLabel, ring, LV_ALIGN_CENTER, 0, 18);
+    lv_obj_align_to(goalLabel, ring, LV_ALIGN_CENTER, 0, 17);
 
     // Stime: km in decimi (con la virgola) e calorie
     const uint32_t kmTenths = (uint32_t)((uint64_t)steps * cfg::STEP_LENGTH_CM / 10000);
     const uint32_t kcal = (uint32_t)((uint64_t)steps * cfg::KCAL_PER_1000_STEPS / 1000);
     lv_label_set_text_fmt(infoLabel, "%lu,%lu km    %lu kcal", (unsigned long)(kmTenths / 10),
                           (unsigned long)(kmTenths % 10), (unsigned long)kcal);
-    lv_obj_align_to(infoLabel, ring, LV_ALIGN_OUT_BOTTOM_MID, 0, 8);
+    lv_obj_align_to(infoLabel, ring, LV_ALIGN_OUT_BOTTOM_MID, 0, 5);
 
     formatSteps(yesterdaySteps, buf, sizeof(buf));
     lv_label_set_text_fmt(yesterdayLabel, "Ieri: %s", buf);
-    lv_obj_align_to(yesterdayLabel, infoLabel, LV_ALIGN_OUT_BOTTOM_MID, 0, 4);
+    lv_obj_align_to(yesterdayLabel, infoLabel, LV_ALIGN_OUT_BOTTOM_MID, 0, 2);
 }
 
 void StepsApp::celebrate()

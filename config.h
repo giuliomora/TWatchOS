@@ -10,7 +10,7 @@ namespace cfg {
 // Versione del firmware (mostrata in Impostazioni > Info)
 constexpr const char *FIRMWARE_VERSION = "0.8";
 
-// NOTA: luminosita', spegnimento schermo, polso, tocco, vibrazione,
+// NOTA: luminosita', colore, spegnimento schermo, polso, tocco, vibrazione,
 // obiettivo dei passi e ora automatica si cambiano anche dall'app
 // Impostazioni. I valori qui sotto sono quelli di partenza (e quelli
 // a cui si torna con "Ripristina impostazioni").
@@ -25,6 +25,10 @@ constexpr uint32_t MENU_TIMEOUT_MS = 15000;
 
 // Luminosita' quando lo schermo e' acceso (0 - 255)
 constexpr uint8_t SCREEN_BRIGHTNESS = 180;
+
+// Colore dello schermo (come il "Cambia colore" del Pokekron):
+// 0 Verde, 1 Giallo, 2 Arancione, 3 Rosso, 4 Viola, 5 Blu, 6 Azzurro, 7 Grigio
+constexpr uint8_t SCREEN_COLOR = 0;
 
 // --- Cosa accende lo schermo --------------------------------
 constexpr bool WAKE_ON_WRIST_TILT  = true;   // rotazione del polso
@@ -43,6 +47,14 @@ constexpr uint32_t MENU_ANIM_MS = 200;
 // Dopo un risveglio, per quanti millisecondi ignorare i tocchi
 // (cosi' il tocco che accende lo schermo non apre anche il menu)
 constexpr uint32_t WAKE_TOUCH_IGNORE_MS = 600;
+
+// --- Suono ----------------------------------------------------
+// Suoni dell'altoparlante (Pokeradar). Valore di partenza: si cambia
+// anche da Impostazioni > Suono. L'altoparlante si accende solo
+// mentre un'app che suona e' aperta.
+constexpr bool SOUND_ON = true;
+// Volume (0 - 100)
+constexpr uint8_t SOUND_VOLUME = 70;
 
 // --- Barra di stato (batteria in alto a destra) ----------
 // Ogni quanti millisecondi aggiornare la batteria (a schermo acceso)
@@ -118,6 +130,16 @@ constexpr int RADAR_PROBE_MAX_DEVICES = 40;    // quanti dispositivi al massimo 
 constexpr uint32_t RADAR_PROBE_HOP_MS = 250;   // ogni quanto cambiare canale Wi-Fi
 constexpr int RADAR_PROBE_CHANNELS = 13;       // canali su cui ascoltare (1..13)
 constexpr int RADAR_PROBE_MAX_SSID = 8;        // nomi di rete al massimo per dispositivo
+
+// --- Pokeradar (ricerca strumenti nascosti) ------------------
+// Ogni quanti passi si "tira il dado" per far comparire uno strumento
+constexpr uint32_t POKERADAR_ROLL_STEPS = 50;
+// Strumenti nascosti al massimo nello stesso momento
+constexpr int POKERADAR_MAX_ITEMS = 3;
+// Distanza (in passi) a cui compaiono: da ... a ...
+// (lo schermo arriva a circa 100 passi dal centro)
+constexpr int POKERADAR_SPAWN_MIN = 40;
+constexpr int POKERADAR_SPAWN_MAX = 450;
 
 // --- Ora ---------------------------------------------------
 // Fuso orario con le regole di ora solare/legale (questo e' l'Italia).

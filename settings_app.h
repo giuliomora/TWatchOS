@@ -2,9 +2,9 @@
 //  settings_app.h - App "Impostazioni"
 //
 //  Una lista che scorre in verticale:
-//    Luminosita' (cursore), Spegnimento quadrante, Spegnimento
+//    Luminosita' (cursore), Colore schermo, Spegnimento quadrante, Spegnimento
 //    menu e app, Gesto del polso, Tocco per accendere, Vibrazione
-//    pulsanti, Obiettivo passi, Passi sul quadrante, Sincronizza
+//    pulsanti, Suono, Obiettivo passi, Passi sul quadrante, Sincronizza
 //    ora adesso, Ora automatica (Wi-Fi), Info, Ripristina.
 //
 //  "Info" apre una pagina a parte (batteria e sistema): si torna

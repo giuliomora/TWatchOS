@@ -30,11 +30,13 @@ public:
 
     // --- I valori ---
     uint8_t brightness;      // luminosita' 20-255
+    uint8_t screenColor;     // colore dello schermo (palette 0-7, vedi theme.h)
     uint8_t faceTimeoutS;    // spegnimento sul quadrante (secondi)
     uint8_t menuTimeoutS;    // spegnimento nel menu e nelle app (secondi)
     bool wristWake;          // accensione con il gesto del polso
     bool touchWake;          // accensione con il tocco
     bool buttonVibrate;      // vibrazione dei pulsanti (cronometro, timer)
+    bool sound;              // suoni dell'altoparlante
     uint32_t stepsGoal;      // obiettivo dei passi
     bool stepsOnFace;        // passi sul quadrante
     bool autoSync;           // sincronizzazione automatica dell'ora via Wi-Fi

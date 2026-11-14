@@ -3,9 +3,9 @@
 //
 //  Visibile su tutte le schermate (quadrante, menu, app).
 //  Mostra la percentuale e l'icona della batteria:
-//    - grigia normalmente
-//    - verde con il fulmine quando e' in carica
-//    - rossa sotto la soglia BATTERY_LOW_PCT (config.h)
+//    - con il fulmine quando e' in carica
+//    - in negativo (chiara su fondo scuro) sotto la soglia
+//      BATTERY_LOW_PCT (config.h)
 //  Si aggiorna quando lo schermo si accende e poi ogni
 //  STATUS_BAR_REFRESH_MS, solo a schermo acceso.
 // =============================================================

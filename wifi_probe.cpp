@@ -9,16 +9,12 @@
 #include "app.h"
 #include "config.h"
 #include "user_settings.h"
+#include "theme.h"
 
 WifiProbe wifiProbe;
 
-// ---- Colori ---------------------------------------------------
-static const uint32_t COLOR_ROW    = 0x1C1C1E;
-static const uint32_t COLOR_WIFI   = 0x00838F;  // azzurro petrolio
-static const uint32_t COLOR_GRAY   = 0x9AA0A6;
-static const uint32_t COLOR_RANDOM = 0xFFB300;  // giallo: MAC casuale
-static const uint32_t COLOR_CARD   = 0x1C1C1E;
-static const uint32_t COLOR_RING   = 0x1B5E20;
+// Colori: quelli del tema (theme.h). Le righe con MAC casuale
+// hanno lo sfondo un po' piu' scuro.
 
 // ---- Dispositivi sentiti --------------------------------------
 struct Prober {
@@ -120,8 +116,8 @@ void WifiProbe::build(lv_obj_t *parent)
     list = lv_obj_create(parent);
     lv_obj_set_size(list, lv_pct(100), lv_pct(100));
     lv_obj_set_pos(list, 0, 0);
-    lv_obj_set_style_bg_opa(list, LV_OPA_TRANSP, 0);
-    lv_obj_set_style_border_width(list, 0, 0);
+    pk::styleClear(list);
+    pk::styleScrollbar(list);
     lv_obj_set_style_pad_all(list, 6, 0);
     lv_obj_set_style_pad_row(list, 6, 0);
     lv_obj_set_style_pad_bottom(list, 54, 0);   // spazio sotto per il pulsante d'angolo
@@ -129,8 +125,7 @@ void WifiProbe::build(lv_obj_t *parent)
 
     // Scritta al centro quando non c'e' niente
     emptyLabel = lv_label_create(parent);
-    lv_obj_set_style_text_font(emptyLabel, &lv_font_montserrat_14, 0);
-    lv_obj_set_style_text_color(emptyLabel, lv_color_hex(COLOR_GRAY), 0);
+    pk::styleLabel(emptyLabel, &pk_font_small, pk::DIM);
     lv_label_set_text(emptyLabel, "Premi Avvia");
     lv_obj_align(emptyLabel, LV_ALIGN_CENTER, 0, -10);
 
@@ -138,11 +133,7 @@ void WifiProbe::build(lv_obj_t *parent)
     card = lv_obj_create(parent);
     lv_obj_set_size(card, 224, 170);
     lv_obj_align(card, LV_ALIGN_CENTER, 0, -6);
-    lv_obj_set_style_bg_color(card, lv_color_hex(COLOR_CARD), 0);
-    lv_obj_set_style_bg_opa(card, LV_OPA_COVER, 0);
-    lv_obj_set_style_border_color(card, lv_color_hex(COLOR_RING), 0);
-    lv_obj_set_style_border_width(card, 2, 0);
-    lv_obj_set_style_radius(card, 14, 0);
+    pk::styleBox(card, 3);
     lv_obj_set_style_pad_all(card, 10, 0);
     lv_obj_set_style_pad_row(card, 2, 0);
     lv_obj_set_flex_flow(card, LV_FLEX_FLOW_COLUMN);
@@ -151,13 +142,11 @@ void WifiProbe::build(lv_obj_t *parent)
     cardTitle = lv_label_create(card);
     lv_obj_set_width(cardTitle, 200);
     lv_label_set_long_mode(cardTitle, LV_LABEL_LONG_DOT);
-    lv_obj_set_style_text_font(cardTitle, &lv_font_montserrat_14, 0);
-    lv_obj_set_style_text_color(cardTitle, lv_color_white(), 0);
+    pk::styleLabel(cardTitle, &pk_font_small);
 
     cardInfo = lv_label_create(card);
     lv_obj_set_width(cardInfo, 200);
-    lv_obj_set_style_text_font(cardInfo, &lv_font_montserrat_14, 0);
-    lv_obj_set_style_text_color(cardInfo, lv_color_hex(COLOR_GRAY), 0);
+    pk::styleLabel(cardInfo, &pk_font_small);
     lv_obj_set_style_text_line_space(cardInfo, 4, 0);
     lv_obj_add_flag(card, LV_OBJ_FLAG_HIDDEN);
 }
@@ -178,24 +167,20 @@ void WifiProbe::rebuildList()
             rows[i] = lv_button_create(list);
             lv_obj_set_width(rows[i], lv_pct(100));
             lv_obj_set_height(rows[i], LV_SIZE_CONTENT);
-            lv_obj_set_style_bg_color(rows[i], lv_color_hex(COLOR_ROW), 0);
-            lv_obj_set_style_radius(rows[i], 10, 0);
-            lv_obj_set_style_shadow_width(rows[i], 0, 0);
+            pk::styleButton(rows[i]);
             lv_obj_set_style_pad_all(rows[i], 8, 0);
             lv_obj_add_event_cb(rows[i], onRowClicked, LV_EVENT_CLICKED, (void *)(intptr_t)i);
 
             lv_obj_t *l = lv_label_create(rows[i]);
-            lv_obj_set_style_text_font(l, &lv_font_montserrat_14, 0);
+            pk::styleLabel(l, &pk_font_small);
             lv_obj_center(l);
         }
         // Aggiorna il testo della riga
         macToStr(pr.mac, mac);
         const int nets = pr.ssidCount;
         lv_obj_t *l = lv_obj_get_child(rows[i], 0);
-        if (pr.randomMac)
-            lv_obj_set_style_text_color(l, lv_color_hex(COLOR_RANDOM), 0);
-        else
-            lv_obj_set_style_text_color(l, lv_color_white(), 0);
+        // MAC casuale: riga con lo sfondo piu' scuro
+        lv_obj_set_style_bg_color(rows[i], pk::color(pr.randomMac ? pk::SHADE : pk::BG), 0);
         if (nets > 0)
             lv_label_set_text_fmt(l, "%s\n%d reti%s", mac, nets, pr.randomMac ? "  (casuale)" : "");
         else

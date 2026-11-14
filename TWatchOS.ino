@@ -18,10 +18,14 @@
 //    settings_app.*    app Impostazioni
 //    user_settings.*   impostazioni salvate in memoria
 //    radar_app.*       app Radar (dispositivi Bluetooth vicini)
+//    pokeradar_app.*   app Pokeradar (ricerca strumenti nascosti, come nel gioco)
+//    sound.*           suoni sintetizzati con l'altoparlante
 //    empty_app.*       modello di app vuota (per ora non usato)
 //    wifi_time.*       sincronizzazione automatica dell'ora via Wi-Fi
 //    secrets.h         nome e password del Wi-Fi
 //    power.*           risparmio energetico (sospensione a schermo spento)
+//    theme.*           tema grafico "Pokekron" (colori LCD e stili)
+//    pk_fonts.c        font pixel del tema (generato)
 //
 //  Per aggiungere una funzionalita':
 //    1. crea nuovo_modulo.h / nuovo_modulo.cpp (copia watchface come esempio)
@@ -45,6 +49,8 @@
 #include "countdown_timer.h"
 #include "settings_app.h"
 #include "radar_app.h"
+#include "pokeradar_app.h"
+#include "sound.h"
 #include "wifi_probe.h"
 #include "wifi_time.h"
 #include "power.h"
@@ -66,11 +72,14 @@ void setup()
     App::add(&watchface);
     App::add(&statusBar);
 
-    // App del menu (griglia 2x2, in questo ordine)
-    launcher.addApp(&stepsApp);
+    App::add(&sound);          // altoparlante (lo usano le app)
+
+    // App del menu, in questo ordine (4 per pagina, griglia 2x2)
+    launcher.addApp(&stepsApp);       // pagina 1
     launcher.addApp(&stopwatchApp);
     launcher.addApp(&radarApp);
-    launcher.addApp(&settingsApp);
+    launcher.addApp(&pokeradarApp);
+    launcher.addApp(&settingsApp);    // pagina 2 (in fondo)
     App::add(&countdownTimer);   // il timer (lo disegna l'app Tempo)
     App::add(&wifiProbe);        // scheda Wi-Fi del Radar (la disegna l'app Radar)
     App::add(&launcher);

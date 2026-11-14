@@ -4,6 +4,7 @@
 #include "user_settings.h"
 #include "app.h"
 #include "config.h"
+#include "theme.h"
 
 UserSettings userSettings;
 
@@ -12,11 +13,13 @@ static const char *NVS_NAME = "settings";
 void UserSettings::setDefaults()
 {
     brightness    = cfg::SCREEN_BRIGHTNESS;
+    screenColor   = cfg::SCREEN_COLOR;
     faceTimeoutS  = (uint8_t)(cfg::SCREEN_TIMEOUT_MS / 1000);
     menuTimeoutS  = (uint8_t)(cfg::MENU_TIMEOUT_MS / 1000);
     wristWake     = cfg::WAKE_ON_WRIST_TILT;
     touchWake     = cfg::WAKE_ON_TOUCH;
     buttonVibrate = cfg::STOPWATCH_VIBRATE;
+    sound         = cfg::SOUND_ON;
     stepsGoal     = cfg::STEPS_GOAL;
     stepsOnFace   = cfg::STEPS_ON_WATCHFACE;
     autoSync      = cfg::WIFI_AUTO_SYNC;
@@ -28,11 +31,13 @@ void UserSettings::begin()
     Preferences p;
     p.begin(NVS_NAME, false);
     brightness    = p.getUChar("bright", brightness);
+    screenColor   = p.getUChar("color", screenColor);
     faceTimeoutS  = p.getUChar("faceTo", faceTimeoutS);
     menuTimeoutS  = p.getUChar("menuTo", menuTimeoutS);
     wristWake     = p.getBool("wrist", wristWake);
     touchWake     = p.getBool("touch", touchWake);
     buttonVibrate = p.getBool("vibra", buttonVibrate);
+    sound         = p.getBool("sound", sound);
     stepsGoal     = p.getUInt("goal", stepsGoal);
     stepsOnFace   = p.getBool("stepsFace", stepsOnFace);
     autoSync      = p.getBool("autoSync", autoSync);
@@ -43,6 +48,10 @@ void UserSettings::begin()
     if (faceTimeoutS == 0) faceTimeoutS = 5;
     if (menuTimeoutS == 0) menuTimeoutS = 15;
     if (stepsGoal < 500) stepsGoal = 500;
+    if (screenColor >= pk::PALETTE_COUNT) screenColor = 0;
+
+    // Colore dello schermo: va scelto prima che gli altri moduli disegnino
+    pk::setPalette(screenColor);
     print();
 }
 
@@ -51,11 +60,13 @@ void UserSettings::save()
     Preferences p;
     p.begin(NVS_NAME, false);
     p.putUChar("bright", brightness);
+    p.putUChar("color", screenColor);
     p.putUChar("faceTo", faceTimeoutS);
     p.putUChar("menuTo", menuTimeoutS);
     p.putBool("wrist", wristWake);
     p.putBool("touch", touchWake);
     p.putBool("vibra", buttonVibrate);
+    p.putBool("sound", sound);
     p.putUInt("goal", stepsGoal);
     p.putBool("stepsFace", stepsOnFace);
     p.putBool("autoSync", autoSync);
@@ -75,8 +86,9 @@ void UserSettings::resetToDefaults()
 
 void UserSettings::print()
 {
-    App::log(name(), "Luminosita' %u, spegnimento quadrante %u s, menu %u s",
-             brightness, faceTimeoutS, menuTimeoutS);
+    App::log(name(), "Luminosita' %u, colore %s, spegnimento quadrante %u s, menu %u s",
+             brightness, pk::paletteName(screenColor), faceTimeoutS, menuTimeoutS);
+    App::log(name(), "Suono %s", sound ? "si" : "no");
     App::log(name(), "Polso %s, tocco %s, vibrazione %s, obiettivo %lu passi, passi sul quadrante %s, ora automatica %s",
              wristWake ? "si" : "no", touchWake ? "si" : "no", buttonVibrate ? "si" : "no",
              (unsigned long)stepsGoal, stepsOnFace ? "si" : "no", autoSync ? "si" : "no");

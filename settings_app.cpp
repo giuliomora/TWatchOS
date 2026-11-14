@@ -12,23 +12,18 @@
 #include "steps_app.h"
 #include "app.h"
 #include "config.h"
+#include "theme.h"
 
 SettingsApp settingsApp;
 
-static const uint32_t COLOR_ROW     = 0x1C1C1E;  // sfondo delle righe
-static const uint32_t COLOR_PRESSED = 0x3A3A3C;
-static const uint32_t COLOR_BTN     = 0x3A3A3C;
-static const uint32_t COLOR_GRAY    = 0x9AA0A6;
-static const uint32_t COLOR_ON      = 0x34C759;  // interruttore acceso
-static const uint32_t COLOR_RED     = 0xFF453A;
 
 // Valori possibili
 static const uint8_t FACE_OPTS[] = {5, 10, 15, 30};
 static const uint8_t MENU_OPTS[] = {10, 15, 30, 60};
 static const uint32_t GOAL_MIN = 2000, GOAL_MAX = 20000, GOAL_STEP = 500;
 
-enum Choice { CH_FACE, CH_MENU, CH_GOAL, CH_COUNT };
-enum Toggle { TG_WRIST, TG_TOUCH, TG_VIBRA, TG_STEPS_FACE, TG_AUTOSYNC, TG_COUNT };
+enum Choice { CH_FACE, CH_MENU, CH_GOAL, CH_COLOR, CH_COUNT };
+enum Toggle { TG_WRIST, TG_TOUCH, TG_VIBRA, TG_STEPS_FACE, TG_AUTOSYNC, TG_SOUND, TG_COUNT };
 
 static const char *RESET_TEXT = "Ripristina impostazioni";
 
@@ -63,8 +58,7 @@ static void formatDecimal(float v, char *out, size_t size)
 static lv_obj_t *makeText(lv_obj_t *parent, const char *text, const lv_font_t *font, uint32_t color)
 {
     lv_obj_t *l = lv_label_create(parent);
-    lv_obj_set_style_text_font(l, font, 0);
-    lv_obj_set_style_text_color(l, lv_color_hex(color), 0);
+    pk::styleLabel(l, font, color);
     lv_label_set_text(l, text);
     return l;
 }
@@ -74,15 +68,12 @@ static lv_obj_t *makeRow(lv_obj_t *list, int h, bool clickable = false)
 {
     lv_obj_t *row = lv_obj_create(list);
     lv_obj_set_size(row, lv_pct(100), h);
-    lv_obj_set_style_bg_color(row, lv_color_hex(COLOR_ROW), 0);
-    lv_obj_set_style_bg_opa(row, LV_OPA_COVER, 0);
-    lv_obj_set_style_border_width(row, 0, 0);
-    lv_obj_set_style_radius(row, 12, 0);
+    pk::styleBox(row);
     lv_obj_set_style_pad_hor(row, 10, 0);
     lv_obj_set_style_pad_ver(row, 6, 0);
     lv_obj_remove_flag(row, LV_OBJ_FLAG_SCROLLABLE);
     if (clickable) {
-        lv_obj_set_style_bg_color(row, lv_color_hex(COLOR_PRESSED), LV_STATE_PRESSED);
+        lv_obj_set_style_bg_color(row, pk::color(pk::SHADE), LV_STATE_PRESSED);
     } else {
         lv_obj_remove_flag(row, LV_OBJ_FLAG_CLICKABLE);  // il dito fa solo scorrere la lista
     }
@@ -93,19 +84,20 @@ static lv_obj_t *makeRow(lv_obj_t *list, int h, bool clickable = false)
 static lv_obj_t *makeScrollBox(lv_obj_t *parent, int h)
 {
     lv_obj_t *box = lv_obj_create(parent);
-    lv_obj_set_size(box, 240, h);
-    lv_obj_set_pos(box, 0, 0);
-    lv_obj_set_style_bg_color(box, lv_color_black(), 0);
+    lv_obj_set_size(box, 236, h - 2);   // lascia vedere il bordo dello schermo
+    lv_obj_set_pos(box, 2, 0);
+    lv_obj_set_style_bg_color(box, pk::color(pk::BG), 0);
     lv_obj_set_style_bg_opa(box, LV_OPA_COVER, 0);
     lv_obj_set_style_border_width(box, 0, 0);
     lv_obj_set_style_radius(box, 0, 0);
-    lv_obj_set_style_pad_hor(box, 6, 0);
+    lv_obj_set_style_pad_hor(box, 4, 0);
     lv_obj_set_style_pad_top(box, 2, 0);
     lv_obj_set_style_pad_bottom(box, 12, 0);
     lv_obj_set_style_pad_row(box, 6, 0);
     lv_obj_set_flex_flow(box, LV_FLEX_FLOW_COLUMN);
     lv_obj_set_scroll_dir(box, LV_DIR_VER);
     lv_obj_set_scrollbar_mode(box, LV_SCROLLBAR_MODE_ACTIVE);
+    pk::styleScrollbar(box);
     return box;
 }
 
@@ -148,13 +140,12 @@ static void onReset(lv_event_t *) { if (launcher.clickAllowed()) settingsApp.res
 static void addSliderRow(lv_obj_t *list, const char *name)
 {
     lv_obj_t *row = makeRow(list, 62);
-    lv_obj_align(makeText(row, name, &lv_font_montserrat_16, 0xFFFFFF), LV_ALIGN_TOP_LEFT, 0, 0);
+    lv_obj_align(makeText(row, name, &pk_font_text, pk::INK), LV_ALIGN_TOP_LEFT, 0, 0);
     brightSlider = lv_slider_create(row);
     lv_obj_set_size(brightSlider, 186, 10);
     lv_obj_align(brightSlider, LV_ALIGN_BOTTOM_MID, 0, -6);
     lv_slider_set_range(brightSlider, 20, 255);
-    lv_obj_set_style_bg_color(brightSlider, lv_color_hex(COLOR_ON), LV_PART_INDICATOR);
-    lv_obj_set_style_bg_color(brightSlider, lv_color_white(), LV_PART_KNOB);
+    pk::styleSlider(brightSlider);
     // trascinare il cursore verso destra non deve valere come "indietro"
     lv_obj_remove_flag(brightSlider, LV_OBJ_FLAG_GESTURE_BUBBLE);
     lv_obj_add_event_cb(brightSlider, onSlider, LV_EVENT_VALUE_CHANGED, nullptr);
@@ -166,21 +157,22 @@ static lv_obj_t *makeArrow(lv_obj_t *row, const char *symbol, lv_align_t align, 
     lv_obj_t *b = lv_button_create(row);
     lv_obj_set_size(b, 44, 30);
     lv_obj_align(b, align, x, 0);
-    lv_obj_set_style_bg_color(b, lv_color_hex(COLOR_BTN), 0);
-    lv_obj_set_style_radius(b, 10, 0);
-    lv_obj_set_style_shadow_width(b, 0, 0);
+    pk::styleButton(b);
     lv_obj_add_event_cb(b, onChoice, LV_EVENT_CLICKED, (void *)(intptr_t)code);
-    lv_obj_center(makeText(b, symbol, &lv_font_montserrat_16, 0xFFFFFF));
+    lv_obj_t *arrow = lv_label_create(b);
+    lv_obj_set_style_text_font(arrow, &lv_font_montserrat_16, 0);   // colore: quello del pulsante
+    lv_label_set_text(arrow, symbol);
+    lv_obj_center(arrow);
     return b;
 }
 
 static void addChoiceRow(lv_obj_t *list, const char *name, Choice id)
 {
     lv_obj_t *row = makeRow(list, 70);
-    lv_obj_align(makeText(row, name, &lv_font_montserrat_16, 0xFFFFFF), LV_ALIGN_TOP_LEFT, 0, 0);
+    lv_obj_align(makeText(row, name, &pk_font_text, pk::INK), LV_ALIGN_TOP_LEFT, 0, 0);
     makeArrow(row, LV_SYMBOL_LEFT, LV_ALIGN_BOTTOM_LEFT, 6, id * 2);
     makeArrow(row, LV_SYMBOL_RIGHT, LV_ALIGN_BOTTOM_RIGHT, -6, id * 2 + 1);
-    lv_obj_t *v = makeText(row, "", &lv_font_montserrat_18, 0xFFFFFF);
+    lv_obj_t *v = makeText(row, "", &pk_font_text, pk::INK);
     lv_obj_set_width(v, 100);
     lv_obj_set_style_text_align(v, LV_TEXT_ALIGN_CENTER, 0);
     lv_obj_align(v, LV_ALIGN_BOTTOM_MID, 0, -5);
@@ -190,14 +182,14 @@ static void addChoiceRow(lv_obj_t *list, const char *name, Choice id)
 static void addToggleRow(lv_obj_t *list, const char *name, Toggle id)
 {
     lv_obj_t *row = makeRow(list, 52);
-    lv_obj_t *l = makeText(row, name, &lv_font_montserrat_16, 0xFFFFFF);
+    lv_obj_t *l = makeText(row, name, &pk_font_text, pk::INK);
     lv_obj_set_width(l, 150);
     lv_label_set_long_mode(l, LV_LABEL_LONG_WRAP);
     lv_obj_align(l, LV_ALIGN_LEFT_MID, 0, 0);
     lv_obj_t *sw = lv_switch_create(row);
     lv_obj_set_size(sw, 48, 26);
     lv_obj_align(sw, LV_ALIGN_RIGHT_MID, 0, 0);
-    lv_obj_set_style_bg_color(sw, lv_color_hex(COLOR_ON), LV_PART_INDICATOR | LV_STATE_CHECKED);
+    pk::styleSwitch(sw);
     lv_obj_add_event_cb(sw, onToggle, LV_EVENT_VALUE_CHANGED, (void *)(intptr_t)id);
     toggleSw[id] = sw;
 }
@@ -214,40 +206,49 @@ void SettingsApp::build(lv_obj_t *parent)
     // --- Lista ---
     listBox = makeScrollBox(parent, h);
     addSliderRow(listBox, "Luminosita'");
+    addChoiceRow(listBox, "Colore schermo", CH_COLOR);
     addChoiceRow(listBox, "Spegnimento quadrante", CH_FACE);
     addChoiceRow(listBox, "Spegnimento menu e app", CH_MENU);
     addToggleRow(listBox, "Gesto del polso", TG_WRIST);
     addToggleRow(listBox, "Tocco per accendere", TG_TOUCH);
     addToggleRow(listBox, "Vibrazione pulsanti", TG_VIBRA);
+    addToggleRow(listBox, "Suono", TG_SOUND);
     addChoiceRow(listBox, "Obiettivo passi", CH_GOAL);
     addToggleRow(listBox, "Passi sul quadrante", TG_STEPS_FACE);
 
     lv_obj_t *row = makeRow(listBox, 60, true);
     lv_obj_add_event_cb(row, onSync, LV_EVENT_CLICKED, nullptr);
-    lv_obj_align(makeText(row, "Sincronizza ora adesso", &lv_font_montserrat_16, 0xFFFFFF), LV_ALIGN_TOP_LEFT, 0, 0);
-    syncSub = makeText(row, "", &lv_font_montserrat_14, COLOR_GRAY);
+    lv_obj_align(makeText(row, "Sincronizza ora adesso", &pk_font_text, pk::INK), LV_ALIGN_TOP_LEFT, 0, 0);
+    syncSub = makeText(row, "", &pk_font_small, pk::DIM);
+    lv_obj_set_width(syncSub, lv_pct(100));
+    lv_label_set_long_mode(syncSub, LV_LABEL_LONG_WRAP);   // i messaggi lunghi vanno a capo
     lv_obj_align(syncSub, LV_ALIGN_BOTTOM_LEFT, 0, 0);
 
     addToggleRow(listBox, "Ora automatica (Wi-Fi)", TG_AUTOSYNC);
 
     row = makeRow(listBox, 46, true);
     lv_obj_add_event_cb(row, onInfo, LV_EVENT_CLICKED, nullptr);
-    lv_obj_align(makeText(row, "Info", &lv_font_montserrat_16, 0xFFFFFF), LV_ALIGN_LEFT_MID, 0, 0);
-    lv_obj_align(makeText(row, LV_SYMBOL_RIGHT, &lv_font_montserrat_16, COLOR_GRAY), LV_ALIGN_RIGHT_MID, 0, 0);
+    lv_obj_align(makeText(row, "Info", &pk_font_text, pk::INK), LV_ALIGN_LEFT_MID, 0, 0);
+    lv_obj_align(makeText(row, LV_SYMBOL_RIGHT, &lv_font_montserrat_16, pk::INK), LV_ALIGN_RIGHT_MID, 0, 0);
 
-    row = makeRow(listBox, 46, true);
+    // Ripristino: riga piena (scura) per distinguerla dalle altre
+    row = makeRow(listBox, 56, true);
+    lv_obj_set_style_bg_color(row, pk::color(pk::INK), 0);
+    lv_obj_set_style_bg_color(row, pk::color(pk::MID), LV_STATE_PRESSED);
     lv_obj_add_event_cb(row, onReset, LV_EVENT_CLICKED, nullptr);
-    resetLabel = makeText(row, RESET_TEXT, &lv_font_montserrat_16, COLOR_RED);
+    resetLabel = makeText(row, RESET_TEXT, &pk_font_text, pk::BG);
+    lv_obj_set_width(resetLabel, lv_pct(100));
+    lv_label_set_long_mode(resetLabel, LV_LABEL_LONG_WRAP);   // "Tocca ancora per confermare" va a capo
     lv_obj_align(resetLabel, LV_ALIGN_LEFT_MID, 0, 0);
 
     // --- Pagina Info (copre la lista quando e' aperta) ---
     infoBox = makeScrollBox(parent, h);
-    makeText(infoBox, "BATTERIA", &lv_font_montserrat_14, COLOR_GRAY);
-    batteryText = makeText(infoBox, "", &lv_font_montserrat_16, 0xFFFFFF);
+    makeText(infoBox, "BATTERIA", &pk_font_small, pk::DIM);
+    batteryText = makeText(infoBox, "", &pk_font_text, pk::INK);
     lv_obj_set_width(batteryText, lv_pct(100));
     lv_label_set_long_mode(batteryText, LV_LABEL_LONG_WRAP);
-    makeText(infoBox, "SISTEMA", &lv_font_montserrat_14, COLOR_GRAY);
-    systemText = makeText(infoBox, "", &lv_font_montserrat_16, 0xFFFFFF);
+    makeText(infoBox, "SISTEMA", &pk_font_small, pk::DIM);
+    systemText = makeText(infoBox, "", &pk_font_text, pk::INK);
     lv_obj_set_width(systemText, lv_pct(100));
     lv_label_set_long_mode(systemText, LV_LABEL_LONG_WRAP);
     lv_obj_add_flag(infoBox, LV_OBJ_FLAG_HIDDEN);
@@ -268,9 +269,10 @@ void SettingsApp::refreshControls()
     char buf[16];
     formatSteps(userSettings.stepsGoal, buf, sizeof(buf));
     lv_label_set_text(choiceValue[CH_GOAL], buf);
+    lv_label_set_text(choiceValue[CH_COLOR], pk::paletteName(userSettings.screenColor));
 
     const bool values[TG_COUNT] = {userSettings.wristWake, userSettings.touchWake, userSettings.buttonVibrate,
-                                   userSettings.stepsOnFace, userSettings.autoSync};
+                                   userSettings.stepsOnFace, userSettings.autoSync, userSettings.sound};
     for (int i = 0; i < TG_COUNT; i++) {
         if (values[i]) lv_obj_add_state(toggleSw[i], LV_STATE_CHECKED);
         else lv_obj_remove_state(toggleSw[i], LV_STATE_CHECKED);
@@ -369,6 +371,11 @@ void SettingsApp::changeChoice(int id, int dir)
         if (g < (int32_t)GOAL_MIN) g = GOAL_MIN;
         if (g > (int32_t)GOAL_MAX) g = GOAL_MAX;
         userSettings.stepsGoal = (uint32_t)g;
+    } else if (id == CH_COLOR) {
+        // gira in tondo: dopo Grigio torna Verde
+        int c = ((int)userSettings.screenColor + dir + pk::PALETTE_COUNT) % pk::PALETTE_COUNT;
+        userSettings.screenColor = (uint8_t)c;
+        launcher.applyPalette(c);   // si vede subito, su tutte le schermate
     }
     userSettings.save();
     refreshControls();
@@ -382,6 +389,7 @@ void SettingsApp::toggle(int id, bool on)
     case TG_VIBRA:      userSettings.buttonVibrate = on; break;
     case TG_STEPS_FACE: userSettings.stepsOnFace = on; break;
     case TG_AUTOSYNC:   userSettings.autoSync = on; wifiTime.setAutoSync(on); break;
+    case TG_SOUND:      userSettings.sound = on; break;
     }
     userSettings.save();
     App::log(name(), "Impostazione %d: %s", id, on ? "si" : "no");
@@ -429,6 +437,7 @@ void SettingsApp::resetPressed()
     resetArmedAt = 0;
     userSettings.resetToDefaults();
     if (screen.isOn()) instance.setBrightness(userSettings.brightness);
+    launcher.applyPalette(userSettings.screenColor);   // torna il colore di config.h
     wifiTime.setAutoSync(userSettings.autoSync);
     screen.setTimeout(userSettings.menuTimeoutMs());
     lv_label_set_text(resetLabel, RESET_TEXT);
